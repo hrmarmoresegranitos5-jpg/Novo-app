@@ -1,1539 +1,1373 @@
 // ══════════════════════════════════════════════════════════════════════
-// MÓDULO TÚMULOS — HR Mármores e Granitos
-// Orçamento profissional e automático de túmulos/jazigos
+// APP-TUMULOS.JS v2.0 — Motor Técnico Profissional
+// HR Mármores e Granitos · DOC-TUM-001 Rev 1.0
+// ⚠ Todas as medidas de entrada/saída em CENTÍMETROS
+// Substitui: app-tumulos.js, app-precif-tumulos.js, app-vendas-tumulos.js
 // ══════════════════════════════════════════════════════════════════════
 
-var TUM = {
-
-  q: {
-    // ── IDENTIFICAÇÃO ─────────────────────────────────────────────
-    cli:        '',
-    falecido:   '',
-    cemiterio:  '',
-    quadra:     '',
-    lote:       '',
-    obs:        '',
-
-    // ── MODELO VISUAL ─────────────────────────────────────────────
-    fotoModelo: '',        // base64 da foto de referência
-    descModelo: '',        // descrição personalizada do cliente
-    tipoBase:   'simples', // preset inicial
-
-    // ── DIMENSÕES ESTRUTURAIS ─────────────────────────────────────
-    dims: {
-      comp:       2.20,  // comprimento externo (m)
-      larg:       0.90,  // largura externa (m)
-      altEst:     0.40,  // altura da estrutura (base elevada) (m)
-      espParede:  0.15,  // espessura das paredes (m)
-      espLaje:    0.10,  // espessura da laje (m)
-      espTampa:   0.03,  // espessura da tampa de granito (m)
-    },
-
-    // ── GAVETAS (compartimentos de caixão) ────────────────────────
-    // Cada gaveta é um nível interno. Altura por gaveta: ~0,70m
-    gavetas: 1,
-    altPorGaveta: 0.70, // altura por compartimento (m)
-
-    // ── PEDRA ─────────────────────────────────────────────────────
-    stoneId:    null,
-    stonePrice: 0,
-    perda:      15,    // % de perda no corte
-
-    // Peças de pedra: on/off + m² calculado automaticamente + acréscimo manual
-    pedras: {
-      tampa:      { on: true,  m2: 0, extra: 0, desc: 'Tampa removível superior' },
-      laterais:   { on: true,  m2: 0, extra: 0, desc: 'Laterais (×2)' },
-      frente:     { on: true,  m2: 0, extra: 0, desc: 'Frente frontal' },
-      fundo:      { on: false, m2: 0, extra: 0, desc: 'Parede de fundo' },
-      lapide:     { on: false, m2: 0, extra: 0, desc: 'Lápide gravada' },
-      revestExt:  { on: false, m2: 0, extra: 0, desc: 'Revestimento externo' },
-      moldura:    { on: false, ml: 0, vlrMl: 120, extra: 0, desc: 'Moldura (ml)' },
-      pingadeira: { on: false, ml: 0, vlrMl: 80,  extra: 0, desc: 'Pingadeira (ml)' },
-    },
-
-    // ── ESTRUTURA CIVIL ───────────────────────────────────────────
-    estrutura: {
-      fundacao:    { on: true,  m3: 0, preco: 350  }, // m³ de concreto na fundação
-      paredes:     { on: true,  m2: 0, preco: 280  }, // m² de alvenaria
-      laje:        { on: true,  m2: 0, preco: 320  }, // m² de laje armada
-      reforco:     { on: true,  kg: 0, preco: 14   }, // kg de ferragem
-      concreto:    { on: true,  m3: 0, preco: 420  }, // m³ concreto armado gavetas
-    },
-
-    // ── MATERIAIS DE CONSTRUÇÃO ───────────────────────────────────
-    mat: {
-      cimento:  { on: true,  qty: 0, preco: 38,  unid: 'sc'  },
-      areia:    { on: true,  qty: 0, preco: 200, unid: 'm³'  },
-      brita:    { on: true,  qty: 0, preco: 220, unid: 'm³'  },
-      argamassa:{ on: true,  qty: 0, preco: 32,  unid: 'sc'  },
-      cola:     { on: true,  qty: 0, preco: 48,  unid: 'sc'  },
-      rejunte:  { on: true,  qty: 0, preco: 14,  unid: 'kg'  },
-      ferro:    { on: true,  qty: 0, preco: 14,  unid: 'kg'  },
-      tijolos:  { on: false, qty: 0, preco: 1.20,unid: 'un'  },
-      frete:    { on: true,  vlr: 0 },
-    },
-
-    // ── MÃO DE OBRA ───────────────────────────────────────────────
-    mdo: {
-      pedreiro:   { on: true,  dias: 2, diaria: 350 },
-      ajudante:   { on: true,  dias: 2, diaria: 220 },
-      marmorista: { on: true,  dias: 2, diaria: 400 },
-      acabamento: { on: true,  custo: 150, venda: 280 },
-      instalacao: { on: true,  custo: 200, venda: 380 },
-      transporte: { on: true,  custo: 120, venda: 180 },
-      riscoQuebra:{ on: true,  perc: 3 },
-    },
-
-    // ── EXTRAS ────────────────────────────────────────────────────
-    lapide: {
-      on: false, tipo: 'padrao',
-      custo: 280, venda: 480,
-      linhas: 4, custoPorLinha: 35, vendaPorLinha: 60,
-      texto: '',
-    },
-    cruz: {
-      on: false, tipo: 'granito', modelo: 'simples',
-      custo: 180, venda: 340,
-    },
-    foto: {
-      on: false, tamanho: '10x15',
-      custo: 85, venda: 160,
-      moldura: false, custoMoldura: 40, vendaMoldura: 80,
-    },
-
-    // ── PRECIFICAÇÃO ──────────────────────────────────────────────
-    margem:   40,
-    desconto: 0,
+// ─────────────────────────────────────────────────────────────────────
+// CONFIGURAÇÃO PADRÃO (salva em CFG.tumCfg)
+// ─────────────────────────────────────────────────────────────────────
+var TUM_DEF_CFG = {
+  margem:  35,
+  parcMax: 8,
+  juros:   12,
+  mob: {
+    pedreiro:   280,
+    ajudante:   160,
+    instalacao: 300,
+    montagem:   280,
+    transporte: 200
   },
-
-  calc: {},
-
-  // ─────────────────────────────────────────────────────────────────
-  // PRESETS DE TIPO
-  // ─────────────────────────────────────────────────────────────────
-  TIPOS: {
-    simples: {
-      label: 'Simples (sem gaveta)', icon: '⬜',
-      desc:  'Base elevada + laterais + frente + tampa. Sem espaço interno para caixão.',
-      gavetas: 0, altEst: 0.40,
-      pedras:     ['tampa','laterais','frente'],
-      estrutura:  ['fundacao','paredes'],
-      diasPedreiro: 1, diasMarmorista: 1,
-    },
-    uma_gaveta: {
-      label: '1 Gaveta', icon: '⬛',
-      desc:  'Um compartimento interno para caixão adulto. Estrutura em bloco/tijolo.',
-      gavetas: 1, altEst: 0.70,
-      pedras:     ['tampa','laterais','frente'],
-      estrutura:  ['fundacao','paredes','laje','reforco','concreto'],
-      diasPedreiro: 2, diasMarmorista: 2,
-    },
-    duas_gavetas: {
-      label: '2 Gavetas', icon: '📦',
-      desc:  'Dois compartimentos sobrepostos. Estrutura reforçada.',
-      gavetas: 2, altEst: 1.40,
-      pedras:     ['tampa','laterais','frente','lapide'],
-      estrutura:  ['fundacao','paredes','laje','reforco','concreto'],
-      diasPedreiro: 4, diasMarmorista: 3,
-    },
-    tres_gavetas: {
-      label: '3 Gavetas', icon: '🗃️',
-      desc:  'Três compartimentos. Concreto armado obrigatório.',
-      gavetas: 3, altEst: 2.10,
-      pedras:     ['tampa','laterais','frente','lapide','moldura'],
-      estrutura:  ['fundacao','paredes','laje','reforco','concreto'],
-      diasPedreiro: 6, diasMarmorista: 4,
-    },
-    jazigo: {
-      label: 'Jazigo Familiar', icon: '🏛️',
-      desc:  'Estrutura monumental, 4+ gavetas, acabamento completo.',
-      gavetas: 4, altEst: 2.80,
-      pedras:     ['tampa','laterais','frente','fundo','lapide','revestExt','moldura','pingadeira'],
-      estrutura:  ['fundacao','paredes','laje','reforco','concreto'],
-      diasPedreiro: 10, diasMarmorista: 7,
-    },
-    reforma: {
-      label: 'Reforma / Revestimento', icon: '🔧',
-      desc:  'Somente revestimento em pedra de estrutura existente.',
-      gavetas: 0, altEst: 0.80,
-      pedras:     ['tampa','laterais','frente','revestExt'],
-      estrutura:  ['paredes'],
-      diasPedreiro: 1, diasMarmorista: 2,
-    },
+  civil: {
+    cimento:   38,
+    areia:    120,
+    brita:    150,
+    argamassa: 28,
+    ferro38:   42,
+    ferro516:  28,
+    malha:     45,
+    blocos:   4.5
   },
-
-  PEDRA_LABELS: {
-    tampa:      'Tampa removível',
-    laterais:   'Laterais (×2)',
-    frente:     'Frente',
-    fundo:      'Fundo',
-    lapide:     'Lápide na pedra',
-    revestExt:  'Revestimento externo',
-    moldura:    'Moldura (ml)',
-    pingadeira: 'Pingadeira (ml)',
-  },
-
-  EST_LABELS: {
-    fundacao:  'Fundação (concreto)',
-    paredes:   'Paredes / Alvenaria',
-    laje:      'Laje armada',
-    reforco:   'Ferragem / Armação',
-    concreto:  'Concreto armado gavetas',
-  },
-
-  MAT_LABELS: {
-    cimento:   'Cimento',
-    areia:     'Areia',
-    brita:     'Brita',
-    argamassa: 'Argamassa / Massa',
-    cola:      'Cola p/ Granito',
-    rejunte:   'Rejunte',
-    ferro:     'Ferro (vergalhão)',
-    tijolos:   'Tijolos / Blocos',
-    frete:     'Frete materiais',
-  },
-
-  MDO_LABELS: {
-    pedreiro:    'Pedreiro',
-    ajudante:    'Ajudante',
-    marmorista:  'Marmorista',
-    acabamento:  'Acabamento final',
-    instalacao:  'Instalação da pedra',
-    transporte:  'Transporte',
-    riscoQuebra: 'Risco de quebra (%)',
-  },
+  pedras: [
+    { id:'p_gabriel', nm:'Preto São Gabriel',  cat:'Popular', pr:180, peso:78 },
+    { id:'cinza_and', nm:'Cinza Andorinha',    cat:'Popular', pr:170, peso:75 },
+    { id:'branco_si', nm:'Branco Siena',       cat:'Médio',   pr:220, peso:76 },
+    { id:'verde_lab', nm:'Verde Labrador',     cat:'Médio',   pr:240, peso:80 },
+    { id:'absoluto',  nm:'Absoluto Negro',     cat:'Premium', pr:380, peso:82 },
+    { id:'carrara',   nm:'Mármore Carrara',    cat:'Premium', pr:420, peso:68 },
+    { id:'quartzito', nm:'Quartzito Branco',   cat:'Premium', pr:460, peso:72 }
+  ]
 };
 
-// ══════════════════════════════════════════════════════════════════════
-// INIT / RENDER
-// ══════════════════════════════════════════════════════════════════════
-function tumInit() { renderTum(); }
+// ─────────────────────────────────────────────────────────────────────
+// PRESETS — C, L, Ae em cm · E em cm (espessura) · N = nº gavetas
+// ─────────────────────────────────────────────────────────────────────
+var TUM_PRESETS = [
+  { id:'simples',  nm:'Simples',       C:190, L:65, E:3, N:0, Ae:30, Ab:0, badge:'0 gavetas' },
+  { id:'1gav',     nm:'1 Gaveta',      C:200, L:70, E:3, N:1, Ae:30, Ab:8, badge:'1 gaveta'  },
+  { id:'dupla',    nm:'Dupla Gaveta',  C:200, L:70, E:3, N:2, Ae:30, Ab:8, badge:'2 gavetas' },
+  { id:'premium',  nm:'Premium',       C:210, L:80, E:4, N:2, Ae:30, Ab:8, badge:'Destaque'  },
+  { id:'capela',   nm:'Capela',        C:220, L:90, E:3, N:3, Ae:35, Ab:8, badge:'3–4 gav'   },
+  { id:'moderno',  nm:'Moderno',       C:200, L:75, E:3, N:2, Ae:30, Ab:0, badge:'1–2 gav'   },
+  { id:'parcial',  nm:'Rev. Parcial',  C:190, L:65, E:3, N:1, Ae:30, Ab:0, badge:'Econômico' },
+  { id:'completo', nm:'Rev. Completo', C:210, L:80, E:3, N:2, Ae:30, Ab:8, badge:'Completo'  }
+];
 
-function renderTum() {
+var TUM_PRESET_PECAS = {
+  simples:  { tampa:true, lat_esq:false, lat_dir:false, frente:true,  fundo:false, lapide:false, rodape:false },
+  '1gav':   { tampa:true, lat_esq:true,  lat_dir:false, frente:true,  fundo:false, lapide:false, rodape:false },
+  dupla:    { tampa:true, lat_esq:true,  lat_dir:true,  frente:true,  fundo:false, lapide:false, rodape:false },
+  premium:  { tampa:true, lat_esq:true,  lat_dir:true,  frente:true,  fundo:true,  lapide:true,  rodape:false },
+  capela:   { tampa:true, lat_esq:true,  lat_dir:true,  frente:true,  fundo:true,  lapide:true,  rodape:true  },
+  moderno:  { tampa:true, lat_esq:true,  lat_dir:false, frente:true,  fundo:false, lapide:false, rodape:false },
+  parcial:  { tampa:true, lat_esq:false, lat_dir:false, frente:true,  fundo:false, lapide:false, rodape:false },
+  completo: { tampa:true, lat_esq:true,  lat_dir:true,  frente:true,  fundo:true,  lapide:false, rodape:true  }
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// ACABAMENTOS (R$/ml)
+// ─────────────────────────────────────────────────────────────────────
+var TUM_ACAB = [
+  { id:'SEM', nm:'Sem acabamento',  prML:0,  dif:1.00, desc:'Borda bruta de corte' },
+  { id:'1L',  nm:'1 Lateral',      prML:8,  dif:1.05, desc:'Uma borda polida/bisotada' },
+  { id:'2L',  nm:'2 Laterais',     prML:14, dif:1.08, desc:'Duas bordas opostas' },
+  { id:'4L',  nm:'4 Laterais',     prML:24, dif:1.12, desc:'Todas as bordas — premium' },
+  { id:'45G', nm:'45° (esquadria)',prML:18, dif:1.15, desc:'Borda em ângulo, sem emenda' },
+  { id:'BOL', nm:'Boleado',        prML:22, dif:1.20, desc:'Borda arredondada R=1,5cm' },
+  { id:'ESC', nm:'Escovado',       prML:12, dif:1.10, desc:'Textura antiderrapante' },
+  { id:'POL', nm:'Polido Brilho',  prML:20, dif:1.18, desc:'Espelho — memorial premium' },
+  { id:'FLA', nm:'Flameado',       prML:16, dif:1.12, desc:'Textura rústica por chama' }
+];
+
+// ─────────────────────────────────────────────────────────────────────
+// PEÇAS
+// ─────────────────────────────────────────────────────────────────────
+var TUM_PECAS_DEF = [
+  { id:'tampa',   nm:'Tampa Superior',   sub:'Peça principal — todas as versões' },
+  { id:'lat_esq', nm:'Lateral Esquerda', sub:'Revestimento parcial e completo' },
+  { id:'lat_dir', nm:'Lateral Direita',  sub:'Revestimento completo' },
+  { id:'frente',  nm:'Frente / Frontal', sub:'Todas as versões' },
+  { id:'fundo',   nm:'Fundo / Tardoz',   sub:'Revestimento completo / opcional' },
+  { id:'lapide',  nm:'Lápide',           sub:'60×40 cm padrão' },
+  { id:'rodape',  nm:'Rodapé de Pedra',  sub:'Perímetro × altura do rodapé' }
+];
+
+// ─────────────────────────────────────────────────────────────────────
+// ITENS OPCIONAIS
+// ─────────────────────────────────────────────────────────────────────
+var TUM_OPTS_DEF = [
+  { id:'cemiterio',    nm:'Instalação em cemitério',    sub:'+10% dificuldade · +20% logística materiais', fixo:0 },
+  { id:'polido_extra', nm:'Polimento extra completo',   sub:'+5% dificuldade',                             fixo:0 },
+  { id:'gravacao',     nm:'Gravação / letras na lápide',sub:'+5% dificuldade',                             fixo:0 },
+  { id:'cruzGranito',  nm:'Cruz em granito',            sub:'Valor fixo R$ 350,00',                        fixo:350 },
+  { id:'foto_porc',    nm:'Foto em porcelana',          sub:'Valor fixo R$ 200,00',                        fixo:200 }
+];
+
+// ─────────────────────────────────────────────────────────────────────
+// ESTADO GLOBAL
+// ─────────────────────────────────────────────────────────────────────
+var TUM = {
+  q: {
+    // Identificação
+    cli:'', tel:'', cemiterio:'', cidade:'', falecido:'', quadra:'', lote:'', obs:'',
+    fotoModelo:'', descModelo:'',
+    // Modelo
+    preset: 'dupla',
+    // Medidas em CENTÍMETROS
+    C:  200,   // comprimento
+    L:   70,   // largura
+    E:    3,   // espessura da pedra (cm)
+    N:    2,   // número de gavetas
+    Ae:  30,   // altura base estrutural (cm)
+    Ab:   8,   // altura do rodapé (cm)
+    // Seleções
+    matId:  null,
+    acabId: 'POL',
+    perda:  12,      // % de perda de corte
+    fatorCem: 20,    // % de frete extra em cemitério
+    // Peças incluídas
+    pecas: { tampa:true, lat_esq:true, lat_dir:true, frente:true, fundo:false, lapide:false, rodape:false },
+    // Opcionais
+    opts:  { cemiterio:false, polido_extra:false, gravacao:false, cruzGranito:false, foto_porc:false }
+  },
+  calc:  null,
+  _tab:  'dados',
+  _hist: []
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// INIT / ENTRY POINT
+// ─────────────────────────────────────────────────────────────────────
+function tumInit()  { _tumBoot(); }
+function renderTum() { _tumBoot(); }
+
+function _tumBoot() {
+  _tumInitCfg();
+  _tumLoadHist();
+  if (!TUM.q.matId) TUM.q.matId = _tumCfg().pedras[0].id;
+  _tumRecalc();
+  _tumRender();
+  _tumInjectCfgTab();
+}
+
+function _tumInitCfg() {
+  if (typeof CFG === 'undefined') return;
+  if (!CFG.tumCfg) {
+    CFG.tumCfg = JSON.parse(JSON.stringify(TUM_DEF_CFG));
+    if (typeof svCFG === 'function') svCFG();
+    return;
+  }
+  ['mob','civil'].forEach(function(k) {
+    if (!CFG.tumCfg[k]) CFG.tumCfg[k] = JSON.parse(JSON.stringify(TUM_DEF_CFG[k]));
+    Object.keys(TUM_DEF_CFG[k]).forEach(function(f) {
+      if (CFG.tumCfg[k][f] === undefined) CFG.tumCfg[k][f] = TUM_DEF_CFG[k][f];
+    });
+  });
+  if (!CFG.tumCfg.pedras || !CFG.tumCfg.pedras.length)
+    CFG.tumCfg.pedras = JSON.parse(JSON.stringify(TUM_DEF_CFG.pedras));
+  if (!CFG.tumCfg.margem) CFG.tumCfg.margem = TUM_DEF_CFG.margem;
+}
+
+function _tumCfg() {
+  return (typeof CFG !== 'undefined' && CFG.tumCfg) ? CFG.tumCfg : TUM_DEF_CFG;
+}
+
+function _tumLoadHist() {
+  try { TUM._hist = JSON.parse(localStorage.getItem('hr_tum_hist') || '[]'); }
+  catch(e) { TUM._hist = []; }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// MOTOR DE CÁLCULO — baseado em DOC-TUM-001
+// Internamente em metros; display em cm
+// ─────────────────────────────────────────────────────────────────────
+function _tumRecalc() {
+  TUM.calc = _tumCalcFull();
+}
+
+function _tumCalcFull() {
+  var q   = TUM.q;
+  var cfg = _tumCfg();
+
+  // ── Converter cm → metros para cálculo ──────────────────────────
+  var C  = q.C  / 100;
+  var L  = q.L  / 100;
+  var E  = q.E;             // espessura em cm (usada como índice)
+  var N  = Math.max(0, Math.round(q.N));
+  var Ae = q.Ae / 100;
+  var Ab = q.Ab / 100;
+
+  // A = Ae + (N × 0,45m) + At  |  At = (E + 2cm) em metros
+  var At_cm = E + 2;
+  var At    = At_cm / 100;
+  var A     = Ae + (N * 0.45) + At;
+
+  var mat  = cfg.pedras.find(function(x){return x.id===q.matId;}) || cfg.pedras[0];
+  var acab = TUM_ACAB.find(function(x){return x.id===q.acabId;}) || TUM_ACAB[0];
+
+  // ── 1. PEÇAS DE PEDRA ────────────────────────────────────────────
+  var pecasCalc = [];
+  var m2_bruto  = 0;
+
+  function peca(nm, dim, m2, ml) {
+    pecasCalc.push({ nm:nm, dim:dim, m2:_r2(m2), ml:_r2(ml) });
+    m2_bruto += m2;
+  }
+
+  if (q.pecas.tampa)
+    peca('Tampa Superior',   _cm(q.C)+'×'+_cm(q.L),         C*L,              2*(C+L));
+  if (q.pecas.lat_esq)
+    peca('Lateral Esquerda', _cm(A*100)+'×'+_cm(q.L),        A*L,              A);
+  if (q.pecas.lat_dir)
+    peca('Lateral Direita',  _cm(A*100)+'×'+_cm(q.L),        A*L,              A);
+  if (q.pecas.frente)
+    peca('Frente / Frontal', _cm(A*100)+'×'+_cm(q.C),        A*C,              2*C);
+  if (q.pecas.fundo)
+    peca('Fundo / Tardoz',   _cm(A*100)+'×'+_cm(q.C),        A*C,              0);
+  if (q.pecas.lapide)
+    peca('Lápide (60×40 cm)','60×40 cm',                     0.60*0.40,        2*(0.60+0.40));
+
+  var N_lajes = Math.max(0, N - 1);
+  if (N_lajes > 0)
+    peca('Laje Divisória (×'+N_lajes+')', _cm(q.C)+'×'+_cm(q.L)+'×'+N_lajes, C*L*N_lajes, 0);
+
+  if (q.pecas.rodape && Ab > 0) {
+    var perim = 2*(C+L);
+    peca('Rodapé', q.Ab+'cm × '+_r2(perim)+'ml', Ab*perim, perim);
+  }
+
+  var fatorPerda = 1 + (q.perda / 100);
+  var m2_total   = _r3(m2_bruto * fatorPerda);
+
+  // Multiplicador de espessura
+  var espMult = {2:1.00, 3:1.35, 4:1.70, 5:2.10};
+  var espM       = espMult[E] || 1.35;
+  var custo_pedra = _r2(m2_total * mat.pr * espM);
+  var peso_total  = _r2(m2_total * mat.peso * (E / 3));
+
+  // ── 2. ACABAMENTOS (m lineares) ──────────────────────────────────
+  var ml_total = 0;
+  pecasCalc.forEach(function(p){ ml_total += p.ml; });
+  ml_total = _r2(ml_total);
+  var custo_acabamento = _r2(ml_total * acab.prML);
+
+  // ── 3. CONSTRUÇÃO CIVIL ──────────────────────────────────────────
+  // Volumes (m³)
+  var Vol_estrutura = C * L * Ae;
+  var Vol_paredes   = 2 * ((C * A * 0.15) + (L * A * 0.15));
+  var Vol_lajes_c   = C * L * 0.06 * N_lajes;
+  var Vol_total     = Vol_estrutura + Vol_paredes + Vol_lajes_c;
+  var m2_parede     = 2 * ((C * A) + (L * A));
+  var Perim_base    = 2 * (C + L);
+  var cv            = cfg.civil;
+
+  var sacos_cimento = Math.ceil(Vol_total * 6) + N;
+  var m3_areia      = _r3(Vol_total * 0.7  + N * 0.05);
+  var m3_brita      = _r3(Vol_estrutura * 0.9 + N * 0.03);
+  var sacos_argam   = Math.ceil(m2_bruto * 5  + N * 0.5);
+  var barras_f38    = Math.ceil(Perim_base / 2) + N * 2;
+  var barras_f516   = Math.ceil(A * 4)          + N * 2;
+  var m2_malha      = _r2(C * L * N_lajes);
+  var unid_blocos   = Math.ceil(m2_parede / 0.076) + N * 12;
+
+  var custo_civil_base =
+    (sacos_cimento * cv.cimento)  +
+    (m3_areia      * cv.areia)    +
+    (m3_brita      * cv.brita)    +
+    (sacos_argam   * cv.argamassa)+
+    (barras_f38    * cv.ferro38)  +
+    (barras_f516   * cv.ferro516) +
+    (m2_malha      * cv.malha)    +
+    (unid_blocos   * cv.blocos);
+
+  var custo_civil = q.opts.cemiterio
+    ? _r2(custo_civil_base * (1 + q.fatorCem / 100))
+    : _r2(custo_civil_base);
+
+  // ── 4. MÃO DE OBRA + FATOR DE DIFICULDADE ───────────────────────
+  var Dif = 1.00;
+  Dif += 0.05 * N;
+  if (q.opts.cemiterio)    Dif += 0.10;
+  if (q.opts.polido_extra) Dif += 0.05;
+  if (q.opts.gravacao)     Dif += 0.05;
+  if (acab.id==='POL'||acab.id==='45G') Dif += 0.05;
+  if (q.pecas.fundo && q.pecas.lat_esq && q.pecas.lat_dir) Dif += 0.08;
+  Dif = _r2(Dif);
+
+  var mob          = cfg.mob;
+  var v_pedreiro   = _r2((2 + N)       * mob.pedreiro   * Dif);
+  var v_ajudante   = _r2((2 + N)       * mob.ajudante    * Dif);
+  var v_instalacao = _r2((1.5 + N*0.5) * mob.instalacao);
+  var v_montagem   = _r2((0.5 + N*0.25)* mob.montagem   * Dif);
+  var v_frete      = mob.transporte + (N >= 2 ? 80 : 0);
+  var custo_mob    = _r2(v_pedreiro + v_ajudante + v_instalacao + v_montagem + v_frete);
+
+  // ── 5. EXTRAS FIXOS ─────────────────────────────────────────────
+  var custo_extras = 0;
+  if (q.opts.cruzGranito) custo_extras += 350;
+  if (q.opts.foto_porc)   custo_extras += 200;
+
+  // ── 6. PRAZO ESTIMADO (dias úteis) ──────────────────────────────
+  var dias_fabr   = Math.ceil(m2_total / 6) + N;
+  var dias_obra   = 2 + N;
+  var dias_cura   = 7;
+  var dias_inst   = Math.ceil(1 + N * 0.5);
+  var prazo_total = Math.max(dias_fabr, dias_obra) + dias_cura + dias_inst;
+
+  // ── 7. TOTAIS ────────────────────────────────────────────────────
+  var tc         = _tumCfg();
+  var margem     = tc.margem  || 35;
+  var parcMax    = tc.parcMax || 8;
+  var juros      = tc.juros   || 12;
+
+  var custo_total = _r2(custo_pedra + custo_acabamento + custo_civil + custo_mob + custo_extras);
+  // Fórmula correta: valor_final = custo / (1 - margem%)
+  var valor_vista = _r2(custo_total / (1 - margem / 100));
+  var valor_parc  = _r2(valor_vista * (1 + juros / 100));
+  var parc_mensal = _r2(valor_parc / parcMax);
+  var lucro       = _r2(valor_vista - custo_total);
+
+  // ── 8. VERIFICAÇÃO DE GAVETA (viabilidade) ───────────────────────
+  var C_int_cm = q.C - 30;   // 15cm parede de cada lado
+  var L_int_cm = q.L - 30;
+  var alertaGaveta = N > 0 && (C_int_cm < 175 || L_int_cm < 55);
+
+  return {
+    // Geometria
+    C:C, L:L, E:E, N:N, Ae:Ae, Ab:Ab, A:A, At_cm:At_cm,
+    A_cm: _r2(A*100), N_lajes:N_lajes,
+    C_int_cm:C_int_cm, L_int_cm:L_int_cm,
+    alertaGaveta:alertaGaveta,
+    // Materiais
+    mat:mat, acab:acab, espM:espM,
+    // Pedras
+    pecasCalc:pecasCalc,
+    m2_bruto:_r3(m2_bruto), m2_total:m2_total,
+    ml_total:ml_total, peso_total:peso_total,
+    // Custos
+    custo_pedra:custo_pedra,
+    custo_acabamento:custo_acabamento,
+    custo_civil:custo_civil,
+    custo_mob:custo_mob,
+    custo_extras:custo_extras,
+    // Civil itemizado
+    Vol_total:_r3(Vol_total),
+    sacos_cimento:sacos_cimento, m3_areia:m3_areia, m3_brita:m3_brita,
+    sacos_argam:sacos_argam, barras_f38:barras_f38, barras_f516:barras_f516,
+    m2_malha:m2_malha, unid_blocos:unid_blocos,
+    // MO itemizado
+    v_pedreiro:v_pedreiro, v_ajudante:v_ajudante,
+    v_instalacao:v_instalacao, v_montagem:v_montagem, v_frete:v_frete, Dif:Dif,
+    // Totais
+    custo_total:custo_total,
+    valor_vista:valor_vista, valor_parc:valor_parc,
+    parc_mensal:parc_mensal, lucro:lucro,
+    margem:margem, parcMax:parcMax, juros:juros,
+    // Prazo
+    prazo_total:prazo_total,
+    // Aliases compatibilidade com DB
+    venda:       valor_vista,
+    custoTotal:  custo_total,
+    lucroTotal:  lucro,
+    margemReal:  valor_vista > 0 ? _r2(lucro / valor_vista * 100) : 0
+  };
+}
+
+function _r2(v) { return Math.round(v * 100)  / 100;  }
+function _r3(v) { return Math.round(v * 1000) / 1000; }
+function _cm(v) { return Math.round(+v) + ' cm'; }
+
+// ─────────────────────────────────────────────────────────────────────
+// RENDER PRINCIPAL
+// ─────────────────────────────────────────────────────────────────────
+function _tumRender() {
   var pg = document.getElementById('pg9');
   if (!pg) return;
-  _tumAutoCalc();
-  TUM.calc = _tumCalc();
+  var r = TUM.calc || {};
+  var vf = r.valor_vista || 0;
+
   pg.innerHTML =
-    _tumHero() +
+    _tumHero(r, vf) +
     _tumTabs() +
-    '<div id="tumBody"></div>' +
-    '<div style="height:90px;"></div>';
+    '<div id="tumBody" style="padding-bottom:90px"></div>';
+
   _tumRenderTab();
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// HERO
-// ══════════════════════════════════════════════════════════════════════
-function _tumHero() {
-  var r = TUM.calc;
-  var vf = r.venda || 0;
-  var lucro = r.lucroTotal || 0;
-  var margemPct = r.margemReal || 0;
-  var tipo = TUM.TIPOS[TUM.q.tipoBase] || {};
+function _tumHero(r, vf) {
+  var q = TUM.q;
+  var preset = TUM_PRESETS.find(function(p){return p.id===q.preset;});
+  var subLabel = (preset ? preset.nm : '') +
+    (q.N > 0 ? ' · ' + q.N + ' gav.' : '') +
+    ' · ' + q.C+'×'+q.L+' cm';
   return '<div class="tum-hero">' +
     '<div class="tum-hero-row">' +
-    '<div>' +
-    '<div class="tum-hero-title">⚰️ Orçamento de Túmulo</div>' +
-    '<div class="tum-hero-sub">' + (tipo.label || '') + (TUM.q.gavetas > 0 ? ' · ' + TUM.q.gavetas + ' gaveta' + (TUM.q.gavetas > 1 ? 's' : '') : '') + '</div>' +
+      '<div>' +
+        '<div class="tum-hero-title">⚰️ Orçamento de Túmulo</div>' +
+        '<div class="tum-hero-sub">' + subLabel + '</div>' +
+      '</div>' +
+      '<div style="text-align:right">' +
+        '<div class="tum-hero-val">' + (vf > 0 ? 'R$ '+(typeof fm==='function'?fm(vf):vf.toFixed(2)) : '—') + '</div>' +
+        (r.lucro > 0 ? '<div style="font-size:.6rem;color:var(--grn);margin-top:2px">lucro R$ '+(typeof fm==='function'?fm(r.lucro):r.lucro.toFixed(2))+' · '+r.margemReal+'%</div>' : '') +
+      '</div>' +
     '</div>' +
-    '<div style="text-align:right;">' +
-    '<div class="tum-hero-val">' + (vf > 0 ? 'R$ ' + fm(vf) : '—') + '</div>' +
-    (lucro > 0 ? '<div style="font-size:.65rem;color:#4cda80;margin-top:2px;">lucro R$ ' + fm(lucro) + ' · ' + margemPct.toFixed(0) + '%</div>' : '') +
-    '</div>' +
-    '</div>' +
-    '</div>';
+  '</div>';
 }
-
-// ══════════════════════════════════════════════════════════════════════
-// TABS
-// ══════════════════════════════════════════════════════════════════════
-var _tumTab = 'projeto';
 
 function _tumTabs() {
   var tabs = [
-    { k: 'projeto',    i: '📐', l: 'Projeto'   },
-    { k: 'pedras',     i: '🪨', l: 'Pedra'     },
-    { k: 'estrutura',  i: '🏗️', l: 'Estrutura' },
-    { k: 'materiais',  i: '🪣', l: 'Materiais' },
-    { k: 'mdo',        i: '🔨', l: 'MO'        },
-    { k: 'extras',     i: '✨', l: 'Extras'    },
-    { k: 'resumo',     i: '💰', l: 'Resumo'    },
+    { id:'dados',    lb:'① Dados'     },
+    { id:'pedras',   lb:'② Pedras'    },
+    { id:'acabamentos',lb:'③ Acabamentos'},
+    { id:'resumo',   lb:'④ Resumo'    },
+    { id:'historico',lb:'📋 Histórico' }
   ];
   var h = '<div class="tum-tabs">';
   tabs.forEach(function(t) {
-    h += '<div class="tum-tab' + (_tumTab === t.k ? ' on' : '') + '" onclick="tumTab(\'' + t.k + '\')">' +
-      '<span>' + t.i + '</span><span>' + t.l + '</span></div>';
+    h += '<button class="tum-tab'+(TUM._tab===t.id?' on':'')+'" onclick="tumTab(\''+t.id+'\')">'+t.lb+'</button>';
   });
-  h += '</div>';
-  return h;
+  return h + '</div>';
 }
 
-function tumTab(t) { _tumTab = t; renderTum(); }
+function tumTab(id) {
+  TUM._tab = id;
+  var body = document.getElementById('tumBody');
+  if (!body) return;
+  _tumRenderTab();
+  // Atualizar tabs
+  document.querySelectorAll('.tum-tab').forEach(function(el) {
+    el.classList.toggle('on', el.textContent.indexOf(id) > -1 || el.getAttribute('onclick').indexOf("'"+id+"'") > -1);
+  });
+}
 
 function _tumRenderTab() {
   var body = document.getElementById('tumBody');
   if (!body) return;
-  switch (_tumTab) {
-    case 'projeto':   body.innerHTML = _tabProjeto();   break;
-    case 'pedras':    body.innerHTML = _tabPedras();    break;
-    case 'estrutura': body.innerHTML = _tabEstrutura(); break;
-    case 'materiais': body.innerHTML = _tabMateriais(); break;
-    case 'mdo':       body.innerHTML = _tabMdo();       break;
-    case 'extras':    body.innerHTML = _tabExtras();    break;
-    case 'resumo':    body.innerHTML = _tabResumo();    break;
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA PROJETO — identificação + modelo visual + dimensões + gavetas
-// ══════════════════════════════════════════════════════════════════════
-function _tabProjeto() {
-  var q = TUM.q;
-  var h = '<div class="tum-sec">';
-
-  // ── Identificação ─────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl">👤 Identificação</div>';
-  h += '<div class="tum-grid2">';
-  h += _tIn('text', 'Cliente / Família', q.cli,       "TUM.q.cli=this.value",       'Família Silva...');
-  h += _tIn('text', 'Falecido(a)',       q.falecido,  "TUM.q.falecido=this.value",  'Nome completo');
-  h += _tIn('text', 'Cemitério',         q.cemiterio, "TUM.q.cemiterio=this.value", 'Cemitério Municipal');
-  h += _tIn('text', 'Quadra / Lote',     q.quadra,    "TUM.q.quadra=this.value",    'Q-04 L-15');
-  h += '</div>';
-
-  // ── Tipo base ─────────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">⚰️ Tipo de Estrutura</div>';
-  h += '<div class="tum-tipos-grid">';
-  Object.keys(TUM.TIPOS).forEach(function(k) {
-    var t = TUM.TIPOS[k];
-    h += '<div class="tum-tipo-card' + (q.tipoBase === k ? ' on' : '') + '" onclick="tumSetTipo(\'' + k + '\')">' +
-      '<div class="tum-tipo-icon">' + t.icon + '</div>' +
-      '<div class="tum-tipo-label">' + t.label + '</div>' +
-      '<div class="tum-tipo-desc">' + t.desc + '</div>' +
-      '</div>';
-  });
-  h += '</div>';
-
-  // ── Foto de modelo ────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">📷 Foto de Referência</div>';
-  h += '<div class="tum-foto-area">';
-  if (q.fotoModelo) {
-    h += '<img src="' + q.fotoModelo + '" style="width:100%;max-height:220px;object-fit:contain;border-radius:10px;border:1px solid var(--bd2);">';
-    h += '<div style="display:flex;gap:8px;margin-top:8px;">';
-    h += '<button class="btn btn-o" style="flex:1;font-size:.7rem;" onclick="tumFotoRemover()">✕ Remover foto</button>';
-    h += '<button class="btn btn-g" style="flex:1;font-size:.7rem;" onclick="tumFotoUpload()">📷 Trocar</button>';
-    h += '</div>';
-  } else {
-    h += '<div class="tum-foto-empty" onclick="tumFotoUpload()">';
-    h += '<div style="font-size:2rem;margin-bottom:6px;">📷</div>';
-    h += '<div style="font-size:.72rem;color:var(--t3);">Toque para adicionar foto de referência</div>';
-    h += '<div style="font-size:.6rem;color:var(--t4);margin-top:4px;">Modelo, foto do túmulo existente, referência do cliente</div>';
-    h += '</div>';
-  }
-  h += '<input type="file" id="tumFotoInp" accept="image/*" style="display:none;" onchange="tumFotoOnFile(this)">';
-  h += '</div>';
-
-  // ── Descrição personalizada ───────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:14px;">📝 Descrição do Projeto</div>';
-  h += '<textarea class="tum-obs" rows="3" placeholder="Descreva o projeto: cor da pedra, estilo, desejos do cliente, referências..." onchange="TUM.q.descModelo=this.value">' + (q.descModelo || '') + '</textarea>';
-
-  // ── Dimensões ─────────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">📐 Dimensões (m)</div>';
-  h += '<div style="background:var(--s3);border:1px solid rgba(100,180,255,.15);border-radius:10px;padding:10px 13px;margin-bottom:10px;font-size:.63rem;color:var(--t3);line-height:1.6;">';
-  h += '💡 Dimensões <b>externas</b> da estrutura. A altura total é calculada automaticamente pelas gavetas.';
-  h += '</div>';
-  h += '<div class="tum-grid3">';
-  h += _tDim('Comprimento (m)', 'comp',    q.dims.comp,    '2.20');
-  h += _tDim('Largura (m)',     'larg',    q.dims.larg,    '0.90');
-  h += _tDim('Parede (m)',      'espParede',q.dims.espParede,'0.15');
-  h += _tDim('Esp. Laje (m)',   'espLaje', q.dims.espLaje, '0.10');
-  h += _tDim('Esp. Tampa (m)',  'espTampa',q.dims.espTampa,'0.03');
-  h += '</div>';
-
-  // ── Gavetas ───────────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">⬛ Compartimentos (Gavetas)</div>';
-  h += '<div style="background:var(--s3);border:1px solid rgba(201,168,76,.15);border-radius:12px;padding:12px 14px;">';
-  h += '<div style="font-size:.62rem;color:var(--t3);margin-bottom:10px;line-height:1.6;">Cada compartimento (gaveta) comporta <b>1 caixão adulto</b>. A altura da estrutura é calculada automaticamente.</div>';
-
-  // Contador de gavetas
-  h += '<div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">';
-  h += '<button class="tum-gav-btn" onclick="tumSetGavetas(Math.max(0,' + q.gavetas + '-1))">−</button>';
-  h += '<div style="text-align:center;flex:1;">';
-  h += '<div style="font-size:2rem;font-weight:900;color:var(--gold2);">' + q.gavetas + '</div>';
-  h += '<div style="font-size:.62rem;color:var(--t3);">' + (q.gavetas === 0 ? 'sem gaveta' : 'compartimento' + (q.gavetas > 1 ? 's' : '')) + '</div>';
-  h += '</div>';
-  h += '<button class="tum-gav-btn" onclick="tumSetGavetas(' + (q.gavetas + 1) + ')">+</button>';
-  h += '</div>';
-
-  // Alt por gaveta
-  h += '<div class="tum-grid2">';
-  h += '<div class="tum-f"><label class="tum-lbl">Altura por gaveta (m)</label>';
-  h += '<input class="tum-in" type="number" step="0.05" min="0.50" max="1.00" value="' + q.altPorGaveta + '" onchange="TUM.q.altPorGaveta=+this.value;tumRecalc()"></div>';
-  h += '<div class="tum-f"><label class="tum-lbl">Altura total calculada</label>';
-  var altTotal = q.dims.altEst + (q.gavetas * q.altPorGaveta) + q.dims.espLaje + q.dims.espTampa;
-  h += '<div style="padding:10px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;font-size:.82rem;font-weight:700;color:var(--gold2);">' + altTotal.toFixed(2) + ' m</div>';
-  h += '</div></div>';
-
-  // Resumo visual de altura
-  h += _alturaVisual(q);
-  h += '</div>';
-
-  // ── Pedra ─────────────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">🪨 Pedra</div>';
-  var sel = q.stoneId && typeof CFG !== 'undefined' && CFG.stones ? CFG.stones.find(function(s) { return s.id === q.stoneId; }) : null;
-  h += '<div class="tum-stone-row">';
-  if (sel) {
-    h += '<div class="tum-stone-sel"><div class="tum-stone-nm">' + sel.nm + '</div><div class="tum-stone-pr">R$ ' + fm(sel.pr) + '/m²</div></div>';
-  } else {
-    h += '<div class="tum-stone-empty">Nenhuma pedra selecionada</div>';
-  }
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumOpenStonePick()">Escolher</button>';
-  h += '</div>';
-
-  h += '<div style="margin-top:8px;display:flex;align-items:center;gap:10px;">';
-  h += '<label class="tum-lbl" style="margin:0;">Perda / Desperdício (%)</label>';
-  h += '<input class="tum-in" type="number" value="' + (q.perda || 15) + '" min="5" max="40" style="max-width:80px;" onchange="TUM.q.perda=+this.value;tumRecalc()">';
-  h += '</div>';
-
-  // Navegação
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-g" onclick="tumTab(\'pedras\')">Próximo: Pedra →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// Visual de altura em camadas
-function _alturaVisual(q) {
-  var altEst   = q.dims.altEst;
-  var altGavs  = q.gavetas * q.altPorGaveta;
-  var altLaje  = q.dims.espLaje;
-  var altTampa = q.dims.espTampa;
-  var altTotal = altEst + altGavs + altLaje + altTampa;
-  if (altTotal <= 0) return '';
-
-  function pct(v) { return (v / altTotal * 100).toFixed(1); }
-
-  var h = '<div style="margin-top:12px;">';
-  h += '<div style="font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--t4);margin-bottom:6px;">Composição da altura</div>';
-  h += '<div style="border-radius:8px;overflow:hidden;border:1px solid var(--bd2);">';
-
-  var camadas = [
-    { label: 'Tampa granito',   val: altTampa, cor: '#C9A84C', opacity: '.9'  },
-    { label: 'Laje de cobertura', val: altLaje,  cor: '#666',    opacity: '.8'  },
-  ];
-  for (var i = 0; i < q.gavetas; i++) {
-    camadas.push({ label: 'Gaveta ' + (i + 1) + ' (' + q.altPorGaveta.toFixed(2) + 'm)', val: q.altPorGaveta, cor: '#4a80b5', opacity: '.7' });
-  }
-  camadas.push({ label: 'Base estrutural', val: altEst, cor: '#483828', opacity: '1' });
-
-  // Renderiza de cima pra baixo
-  camadas.forEach(function(c) {
-    if (!c.val) return;
-    h += '<div style="background:' + c.cor + ';opacity:' + c.opacity + ';padding:5px 10px;' +
-      'min-height:' + Math.max(24, pct(c.val) * 1.5) + 'px;display:flex;align-items:center;justify-content:space-between;">' +
-      '<span style="font-size:.6rem;color:#fff;font-weight:600;">' + c.label + '</span>' +
-      '<span style="font-size:.6rem;color:rgba(255,255,255,.8);">' + c.val.toFixed(2) + 'm</span>' +
-      '</div>';
-  });
-  h += '</div>';
-  h += '<div style="text-align:right;font-size:.65rem;color:var(--gold2);font-weight:700;margin-top:4px;">Total: ' + altTotal.toFixed(2) + ' m</div>';
-  h += '</div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA PEDRAS
-// ══════════════════════════════════════════════════════════════════════
-function _tabPedras() {
-  var q = TUM.q;
-  var sel = q.stoneId && typeof CFG !== 'undefined' && CFG.stones ? CFG.stones.find(function(s) { return s.id === q.stoneId; }) : null;
-  var stPr = sel ? sel.pr : (q.stonePrice || 0);
-
-  var h = '<div class="tum-sec">';
-  if (!stPr) h += '<div class="tum-warn">⚠️ Selecione uma pedra na aba Projeto para ver os valores.</div>';
-
-  h += '<div class="tum-sec-lbl">🪨 Peças de Granito</div>';
-  h += '<div style="background:var(--s3);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:.62rem;color:var(--t3);line-height:1.6;">';
-  h += '📏 Áreas calculadas automaticamente pelas dimensões. Ajuste manualmente se necessário.';
-  h += '</div>';
-
-  h += '<div class="tum-peca-list">';
-  Object.keys(TUM.PEDRA_LABELS).forEach(function(k) {
-    var peca = q.pedras[k]; if (!peca) return;
-    var isML = (k === 'moldura' || k === 'pingadeira');
-    var m2   = isML ? (peca.ml || 0) : (peca.m2 || 0);
-    var custo = isML
-      ? (peca.ml || 0) * (peca.vlrMl || 0)
-      : m2 * stPr + (peca.extra || 0);
-
-    var subA = isML ? fm(peca.ml || 0) + ' ml' : fm(m2) + ' m²';
-    var subB = stPr && !isML ? 'R$ ' + fm(custo) : (isML && peca.vlrMl ? 'R$ ' + fm(custo) : '');
-
-    var det = isML
-      ? '<div class="tum-grid2">' +
-        '<div class="tum-f"><label class="tum-lbl">Metros lineares</label>' +
-        '<input class="tum-in" type="number" step="0.01" value="' + (peca.ml || 0) + '" ' +
-        'onchange="TUM.q.pedras.' + k + '.ml=+this.value;tumRecalc()"></div>' +
-        '<div class="tum-f"><label class="tum-lbl">Valor/ml R$</label>' +
-        '<input class="tum-in" type="number" value="' + (peca.vlrMl || 0) + '" ' +
-        'onchange="TUM.q.pedras.' + k + '.vlrMl=+this.value;tumRecalc()"></div>' +
-        '</div>'
-      : '<div class="tum-grid2">' +
-        '<div class="tum-f"><label class="tum-lbl">Área m² (auto)</label>' +
-        '<input class="tum-in" type="number" step="0.01" value="' + m2 + '" ' +
-        'onchange="TUM.q.pedras.' + k + '.m2=+this.value;TUM.q.pedras.' + k + '._manual=true;tumRecalc()"></div>' +
-        '<div class="tum-f"><label class="tum-lbl">Acréscimo R$</label>' +
-        '<input class="tum-in" type="number" min="0" value="' + (peca.extra || 0) + '" ' +
-        'onchange="TUM.q.pedras.' + k + '.extra=+this.value;tumRecalc()"></div>' +
-        '</div>';
-
-    h += _pecaRow(k, TUM.PEDRA_LABELS[k], peca.on, subA, subB, det, 'tumTogPedra');
-  });
-  h += '</div>';
-
-  // Totais pedra
   var r = TUM.calc;
-  h += '<div class="tum-total-box">';
-  h += _totRow('Área líquida',             fm(r.m2Liq || 0) + ' m²',  false);
-  h += _totRow('Com ' + (q.perda || 15) + '% perda', fm(r.m2Total || 0) + ' m²', false);
-  if (stPr) {
-    h += _totRow('💎 Custo pedra',          'R$ ' + fm(r.custoPedra || 0),  true);
-    h += _totRow('💰 Valor venda pedra',    'R$ ' + fm(r.vendaPedra || 0),  true,  'grn');
-    h += _totRow('📈 Lucro pedra',          'R$ ' + fm((r.vendaPedra || 0) - (r.custoPedra || 0)), false, 'gold');
-  }
-  h += '</div>';
-
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumTab(\'projeto\')">← Projeto</button>';
-  h += '<button class="btn btn-g" style="font-size:.7rem;" onclick="tumTab(\'estrutura\')">Estrutura →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA ESTRUTURA CIVIL
-// ══════════════════════════════════════════════════════════════════════
-function _tabEstrutura() {
-  var q = TUM.q;
-  var est = q.estrutura;
-  var h = '<div class="tum-sec">';
-
-  h += '<div style="background:var(--s3);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:.62rem;color:var(--t3);line-height:1.6;">';
-  h += '🏗️ Custos da construção civil. Quantidades calculadas automaticamente. Ajuste se necessário.';
-  h += '</div>';
-
-  h += '<div class="tum-sec-lbl">Fundação</div>';
-  h += '<div class="tum-peca-list">';
-  h += _estRow('fundacao', 'Fundação em concreto', est.fundacao, 'm³', 'Volume m³');
-  h += '</div>';
-
-  h += '<div class="tum-sec-lbl" style="margin-top:12px;">Paredes e Laje</div>';
-  h += '<div class="tum-peca-list">';
-  h += _estRow('paredes',  'Alvenaria / Paredes',   est.paredes,  'm²', 'Área m²');
-  h += _estRow('laje',     'Laje de cobertura (armada)', est.laje, 'm²', 'Área m²');
-  h += '</div>';
-
-  h += '<div class="tum-sec-lbl" style="margin-top:12px;">Ferragem e Concreto (gavetas)</div>';
-  h += '<div class="tum-peca-list">';
-  h += _estRow('reforco',  'Ferragem / Armação',    est.reforco,  'kg', 'Peso kg');
-  h += _estRow('concreto', 'Concreto armado',       est.concreto, 'm³', 'Volume m³');
-  h += '</div>';
-
-  // Influência automática das gavetas
-  if (q.gavetas > 0) {
-    h += '<div style="background:rgba(74,128,181,.08);border:1px solid rgba(74,128,181,.2);border-radius:10px;padding:10px 13px;margin-top:10px;">';
-    h += '<div style="font-size:.6rem;color:#4a80b5;font-weight:700;margin-bottom:6px;">⬛ Influência das ' + q.gavetas + ' gaveta(s)</div>';
-    h += '<div style="font-size:.62rem;color:var(--t3);line-height:1.7;">';
-    h += '• Ferragem: +' + fm(q.gavetas * 15) + ' kg por gaveta<br>';
-    h += '• Concreto: +' + fm(q.gavetas * 0.12) + ' m³ por gaveta<br>';
-    h += '• Altura total: ' + (q.dims.altEst + q.gavetas * q.altPorGaveta + q.dims.espLaje + q.dims.espTampa).toFixed(2) + ' m<br>';
-    h += '• Tampa: ' + fm(TUM.q.dims.comp * TUM.q.dims.larg) + ' m² (reforçada)';
-    h += '</div></div>';
-  }
-
-  var r = TUM.calc;
-  h += '<div class="tum-total-box" style="margin-top:12px;">';
-  h += _totRow('🏗️ Total Estrutura', 'R$ ' + fm(r.custoEstrutura || 0), true);
-  h += '</div>';
-
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumTab(\'pedras\')">← Pedra</button>';
-  h += '<button class="btn btn-g" style="font-size:.7rem;" onclick="tumTab(\'materiais\')">Materiais →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-function _estRow(k, label, item, unid, qLabel) {
-  if (!item) return '';
-  var qty = item.m2 || item.m3 || item.kg || item.qty || 0;
-  var vlr = qty * (item.preco || 0);
-  return _pecaRow(k, label, item.on,
-    fm(qty) + ' ' + unid,
-    'R$ ' + fm(vlr),
-    '<div class="tum-grid2">' +
-    '<div class="tum-f"><label class="tum-lbl">' + qLabel + '</label>' +
-    '<input class="tum-in" type="number" step="0.01" min="0" value="' + qty + '" ' +
-    'onchange="tumSetEst(\'' + k + '\',' + (item.m2 !== undefined ? '\'m2\'' : item.m3 !== undefined ? '\'m3\'' : '\'kg\'') + ',+this.value);tumRecalc()"></div>' +
-    '<div class="tum-f"><label class="tum-lbl">Preço unit. R$</label>' +
-    '<input class="tum-in" type="number" step="1" min="0" value="' + (item.preco || 0) + '" ' +
-    'onchange="TUM.q.estrutura.' + k + '.preco=+this.value;tumRecalc()"></div>' +
-    '</div>',
-    'tumTogEst');
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA MATERIAIS DE CONSTRUÇÃO
-// ══════════════════════════════════════════════════════════════════════
-function _tabMateriais() {
-  var mat = TUM.q.mat;
-  var h = '<div class="tum-sec">';
-  h += '<div class="tum-info-box">💡 Quantidades estimadas automaticamente pelas dimensões e gavetas. Ajuste se necessário.</div>';
-
-  h += '<div class="tum-sec-lbl">🪣 Materiais</div>';
-  h += '<div class="tum-peca-list">';
-
-  ['cimento','areia','brita','argamassa','cola','rejunte','ferro','tijolos'].forEach(function(k) {
-    var it = mat[k]; if (!it) return;
-    var vlr = (it.qty || 0) * (it.preco || 0);
-    h += _pecaRow(k, TUM.MAT_LABELS[k], it.on,
-      fm(it.qty) + ' ' + it.unid, 'R$ ' + fm(vlr),
-      '<div class="tum-grid2">' +
-      '<div class="tum-f"><label class="tum-lbl">Qtd (' + it.unid + ')</label>' +
-      '<input class="tum-in" type="number" step="0.1" min="0" value="' + (it.qty || 0) + '" onchange="TUM.q.mat.' + k + '.qty=+this.value;tumRecalc()"></div>' +
-      '<div class="tum-f"><label class="tum-lbl">Preço R$/' + it.unid + '</label>' +
-      '<input class="tum-in" type="number" step="0.01" min="0" value="' + (it.preco || 0) + '" onchange="TUM.q.mat.' + k + '.preco=+this.value;tumRecalc()"></div>' +
-      '</div>',
-      'tumTogMat');
-  });
-
-  // Frete
-  var fr = mat.frete;
-  h += _pecaRow('frete', 'Frete / Entrega', fr.on, '', 'R$ ' + fm(fr.vlr || 0),
-    '<div class="tum-f"><label class="tum-lbl">Valor R$</label>' +
-    '<input class="tum-in" type="number" min="0" value="' + (fr.vlr || 0) + '" onchange="TUM.q.mat.frete.vlr=+this.value;tumRecalc()"></div>',
-    'tumTogMat');
-
-  h += '</div>';
-  var r = TUM.calc;
-  h += '<div class="tum-total-box">';
-  h += _totRow('🪣 Total Materiais', 'R$ ' + fm(r.custoMat || 0), true);
-  h += '</div>';
-
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumTab(\'estrutura\')">← Estrutura</button>';
-  h += '<button class="btn btn-g" style="font-size:.7rem;" onclick="tumTab(\'mdo\')">Mão de Obra →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA MÃO DE OBRA
-// ══════════════════════════════════════════════════════════════════════
-function _tabMdo() {
-  var mdo = TUM.q.mdo;
-  var h = '<div class="tum-sec">';
-
-  h += '<div class="tum-sec-lbl">👷 Equipe de Construção</div>';
-  h += '<div class="tum-peca-list">';
-
-  ['pedreiro','ajudante'].forEach(function(k) {
-    var it = mdo[k];
-    var custo = (it.dias || 0) * (it.diaria || 0);
-    h += _pecaRow(k, TUM.MDO_LABELS[k], it.on,
-      it.dias + ' dia' + (it.dias > 1 ? 's' : ''),
-      'R$ ' + fm(custo),
-      '<div class="tum-grid2">' +
-      '<div class="tum-f"><label class="tum-lbl">Dias</label>' +
-      '<input class="tum-in" type="number" step="0.5" min="0" value="' + (it.dias || 0) + '" onchange="TUM.q.mdo.' + k + '.dias=+this.value;tumRecalc()"></div>' +
-      '<div class="tum-f"><label class="tum-lbl">Diária R$</label>' +
-      '<input class="tum-in" type="number" min="0" value="' + (it.diaria || 0) + '" onchange="TUM.q.mdo.' + k + '.diaria=+this.value;tumRecalc()"></div>' +
-      '</div>',
-      'tumTogMdo');
-  });
-
-  h += '<div class="tum-sec-lbl" style="margin-top:12px;">🔨 Equipe Marmorista</div>';
-  h += _pecaRow('marmorista', 'Marmorista', mdo.marmorista.on,
-    mdo.marmorista.dias + ' dia' + (mdo.marmorista.dias > 1 ? 's' : ''),
-    'R$ ' + fm(mdo.marmorista.dias * mdo.marmorista.diaria),
-    '<div class="tum-grid2">' +
-    '<div class="tum-f"><label class="tum-lbl">Dias</label>' +
-    '<input class="tum-in" type="number" step="0.5" min="0" value="' + mdo.marmorista.dias + '" onchange="TUM.q.mdo.marmorista.dias=+this.value;tumRecalc()"></div>' +
-    '<div class="tum-f"><label class="tum-lbl">Diária R$</label>' +
-    '<input class="tum-in" type="number" min="0" value="' + mdo.marmorista.diaria + '" onchange="TUM.q.mdo.marmorista.diaria=+this.value;tumRecalc()"></div>' +
-    '</div>',
-    'tumTogMdo');
-
-  h += '<div class="tum-sec-lbl" style="margin-top:12px;">Serviços (custo × venda)</div>';
-  ['acabamento','instalacao','transporte'].forEach(function(k) {
-    var it = mdo[k];
-    h += _pecaRow(k, TUM.MDO_LABELS[k], it.on,
-      'custo R$ ' + fm(it.custo || 0),
-      'venda R$ ' + fm(it.venda || 0),
-      '<div class="tum-grid2">' +
-      '<div class="tum-f"><label class="tum-lbl">Custo real R$</label>' +
-      '<input class="tum-in" type="number" min="0" value="' + (it.custo || 0) + '" onchange="TUM.q.mdo.' + k + '.custo=+this.value;tumRecalc()"></div>' +
-      '<div class="tum-f"><label class="tum-lbl">Valor cobrado R$</label>' +
-      '<input class="tum-in" type="number" min="0" value="' + (it.venda || 0) + '" onchange="TUM.q.mdo.' + k + '.venda=+this.value;tumRecalc()"></div>' +
-      '</div>',
-      'tumTogMdo');
-  });
-
-  // Risco de quebra
-  var rq = mdo.riscoQuebra;
-  h += _pecaRow('riscoQuebra', 'Risco de quebra (% sobre pedra)', rq.on,
-    (rq.perc || 0) + '%', '',
-    '<div class="tum-f"><label class="tum-lbl">% sobre custo da pedra</label>' +
-    '<input class="tum-in" type="number" step="0.5" min="0" max="30" value="' + (rq.perc || 0) + '" onchange="TUM.q.mdo.riscoQuebra.perc=+this.value;tumRecalc()"></div>',
-    'tumTogMdo');
-
-  h += '</div>';
-
-  // Influência gavetas na MO
-  if (TUM.q.gavetas > 0) {
-    h += '<div style="background:rgba(74,128,181,.08);border:1px solid rgba(74,128,181,.2);border-radius:10px;padding:10px 13px;margin-top:10px;">';
-    h += '<div style="font-size:.6rem;color:#4a80b5;font-weight:700;margin-bottom:4px;">⬛ Acréscimo automático por gavetas</div>';
-    h += '<div style="font-size:.62rem;color:var(--t3);">+' + TUM.q.gavetas + ' dia(s) na obra de construção foram adicionados automaticamente.</div>';
-    h += '</div>';
-  }
-
-  var r = TUM.calc;
-  h += '<div class="tum-total-box">';
-  h += _totRow('Custo real MO',    'R$ ' + fm(r.custoMdo || 0),  false);
-  h += _totRow('Valor venda MO',   'R$ ' + fm(r.vendaMdo || 0),  true, 'grn');
-  h += _totRow('Lucro MO',         'R$ ' + fm((r.vendaMdo || 0) - (r.custoMdo || 0)), false, 'gold');
-  h += '</div>';
-
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumTab(\'materiais\')">← Materiais</button>';
-  h += '<button class="btn btn-g" style="font-size:.7rem;" onclick="tumTab(\'extras\')">Extras →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA EXTRAS — lápide, cruz, foto
-// ══════════════════════════════════════════════════════════════════════
-function _tabExtras() {
-  var q = TUM.q;
-  var h = '<div class="tum-sec">';
-
-  // ── Lápide ──
-  h += _extraHd('📜 Lápide', 'lapide', q.lapide.on);
-  if (q.lapide.on) {
-    var lp = q.lapide;
-    var cLap = lp.custo + lp.linhas * lp.custoPorLinha;
-    var vLap = lp.venda + lp.linhas * lp.vendaPorLinha;
-    h += '<div class="tum-extra-body">';
-    h += '<div class="tum-grid2">';
-    h += '<div class="tum-f"><label class="tum-lbl">Tipo</label><select class="tum-in" onchange="TUM.q.lapide.tipo=this.value;tumRecalc()">';
-    [['padrao','Padrão'],['personalizada','Personalizada'],['bronze','Placa Bronze']].forEach(function(o) {
-      h += '<option value="' + o[0] + '"' + (lp.tipo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-    });
-    h += '</select></div>';
-    h += '<div class="tum-f"><label class="tum-lbl">Linhas de texto</label>' +
-         '<input class="tum-in" type="number" min="1" max="12" value="' + lp.linhas + '" onchange="TUM.q.lapide.linhas=+this.value;tumRecalc()"></div>';
-    h += '</div>';
-    h += '<div class="tum-grid2" style="margin-top:8px;">';
-    h += '<div class="tum-f"><label class="tum-lbl">Custo placa R$</label><input class="tum-in" type="number" min="0" value="' + lp.custo + '" onchange="TUM.q.lapide.custo=+this.value;tumRecalc()"></div>';
-    h += '<div class="tum-f"><label class="tum-lbl" style="color:var(--gold);">Venda placa R$</label><input class="tum-in" type="number" min="0" value="' + lp.venda + '" onchange="TUM.q.lapide.venda=+this.value;tumRecalc()"></div>';
-    h += '</div>';
-    h += '<div class="tum-grid2" style="margin-top:6px;">';
-    h += '<div class="tum-f"><label class="tum-lbl">Custo/linha R$</label><input class="tum-in" type="number" min="0" value="' + lp.custoPorLinha + '" onchange="TUM.q.lapide.custoPorLinha=+this.value;tumRecalc()"></div>';
-    h += '<div class="tum-f"><label class="tum-lbl" style="color:var(--gold);">Venda/linha R$</label><input class="tum-in" type="number" min="0" value="' + lp.vendaPorLinha + '" onchange="TUM.q.lapide.vendaPorLinha=+this.value;tumRecalc()"></div>';
-    h += '</div>';
-    h += _miniRes('Lápide', cLap, vLap);
-    h += '<div class="tum-f" style="margin-top:8px;"><label class="tum-lbl">Texto da lápide</label>' +
-         '<textarea class="tum-in" rows="2" style="resize:vertical;" placeholder="Aqui jaz..." onchange="TUM.q.lapide.texto=this.value">' + (lp.texto || '') + '</textarea></div>';
-    h += '</div>';
-  }
-
-  // ── Cruz ──
-  h += _extraHd('✝️ Cruz', 'cruz', q.cruz.on);
-  if (q.cruz.on) {
-    var cr = q.cruz;
-    h += '<div class="tum-extra-body">';
-    h += '<div class="tum-grid2">';
-    h += '<div class="tum-f"><label class="tum-lbl">Material</label><select class="tum-in" onchange="TUM.q.cruz.tipo=this.value;tumRecalc()">';
-    [['granito','Granito'],['marmore','Mármore'],['metal','Metal Pintado'],['inox','Inox']].forEach(function(o) {
-      h += '<option value="' + o[0] + '"' + (cr.tipo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-    });
-    h += '</select></div>';
-    h += '<div class="tum-f"><label class="tum-lbl">Modelo</label><select class="tum-in" onchange="TUM.q.cruz.modelo=this.value;tumRecalc()">';
-    [['simples','Simples'],['lavrada','Lavrada'],['com_base','Com Base']].forEach(function(o) {
-      h += '<option value="' + o[0] + '"' + (cr.modelo === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-    });
-    h += '</select></div>';
-    h += '</div>';
-    h += '<div class="tum-grid2" style="margin-top:8px;">';
-    h += '<div class="tum-f"><label class="tum-lbl">Custo R$</label><input class="tum-in" type="number" min="0" value="' + cr.custo + '" onchange="TUM.q.cruz.custo=+this.value;tumRecalc()"></div>';
-    h += '<div class="tum-f"><label class="tum-lbl" style="color:var(--gold);">Venda R$</label><input class="tum-in" type="number" min="0" value="' + cr.venda + '" onchange="TUM.q.cruz.venda=+this.value;tumRecalc()"></div>';
-    h += '</div>';
-    h += _miniRes('Cruz', cr.custo, cr.venda);
-    h += '</div>';
-  }
-
-  // ── Foto porcelana ──
-  h += _extraHd('📷 Foto Porcelana', 'foto', q.foto.on);
-  if (q.foto.on) {
-    var ft = q.foto;
-    h += '<div class="tum-extra-body">';
-    h += '<div class="tum-grid2">';
-    h += '<div class="tum-f"><label class="tum-lbl">Tamanho</label><select class="tum-in" onchange="TUM.q.foto.tamanho=this.value;tumRecalc()">';
-    [['10x15','10×15 cm'],['15x20','15×20 cm'],['20x25','20×25 cm'],['oval','Oval']].forEach(function(o) {
-      h += '<option value="' + o[0] + '"' + (ft.tamanho === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
-    });
-    h += '</select></div>';
-    h += '<div class="tum-f"><label class="tum-lbl">Moldura?</label>' +
-         '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;">' +
-         '<input type="checkbox"' + (ft.moldura ? ' checked' : '') + ' style="accent-color:var(--gold);" onchange="TUM.q.foto.moldura=this.checked;tumRecalc()">' +
-         '<span style="font-size:.72rem;color:var(--t2);">Com moldura</span></label></div>';
-    h += '</div>';
-    h += '<div class="tum-grid2" style="margin-top:8px;">';
-    h += '<div class="tum-f"><label class="tum-lbl">Custo foto R$</label><input class="tum-in" type="number" min="0" value="' + ft.custo + '" onchange="TUM.q.foto.custo=+this.value;tumRecalc()"></div>';
-    h += '<div class="tum-f"><label class="tum-lbl" style="color:var(--gold);">Venda foto R$</label><input class="tum-in" type="number" min="0" value="' + ft.venda + '" onchange="TUM.q.foto.venda=+this.value;tumRecalc()"></div>';
-    h += '</div>';
-    if (ft.moldura) {
-      h += '<div class="tum-grid2" style="margin-top:6px;">';
-      h += '<div class="tum-f"><label class="tum-lbl">Custo moldura R$</label><input class="tum-in" type="number" min="0" value="' + ft.custoMoldura + '" onchange="TUM.q.foto.custoMoldura=+this.value;tumRecalc()"></div>';
-      h += '<div class="tum-f"><label class="tum-lbl" style="color:var(--gold);">Venda moldura R$</label><input class="tum-in" type="number" min="0" value="' + ft.vendaMoldura + '" onchange="TUM.q.foto.vendaMoldura=+this.value;tumRecalc()"></div>';
-      h += '</div>';
-    }
-    var cFoto = ft.custo + (ft.moldura ? ft.custoMoldura : 0);
-    var vFoto = ft.venda + (ft.moldura ? ft.vendaMoldura : 0);
-    h += _miniRes('Foto Porcelana', cFoto, vFoto);
-    h += '</div>';
-  }
-
-  h += '<div class="tum-nav-row">';
-  h += '<button class="btn btn-o" style="font-size:.7rem;" onclick="tumTab(\'mdo\')">← MO</button>';
-  h += '<button class="btn btn-g" style="font-size:.7rem;" onclick="tumTab(\'resumo\')">Ver Resumo →</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// ABA RESUMO
-// ══════════════════════════════════════════════════════════════════════
-function _tabResumo() {
-  var q = TUM.q, r = TUM.calc;
-  var tipo = TUM.TIPOS[q.tipoBase] || {};
-  var h = '<div class="tum-sec">';
-
-  // ── Tabela custo × venda × lucro ──────────────────────────────
-  h += '<div class="tum-sec-lbl">📊 Custo × Venda × Lucro</div>';
-  h += '<div class="tum-dre-table">';
-  h += '<div class="tum-dre-head"><span>Categoria</span><span>Custo</span><span>Venda</span><span>Lucro</span></div>';
-
-  var cats = [
-    { icon: '💎', label: 'Pedra',      custo: r.custoPedra,    venda: r.vendaPedra    },
-    { icon: '📜', label: 'Lápide',     custo: r.custoLapide,   venda: r.vendaLapide   },
-    { icon: '✝️', label: 'Cruz',        custo: r.custoCruz,     venda: r.vendaCruz     },
-    { icon: '📷', label: 'Foto',        custo: r.custoFoto,     venda: r.vendaFoto     },
-    { icon: '🔨', label: 'Mão de Obra', custo: r.custoMdo,      venda: r.vendaMdo      },
-    { icon: '🏗️', label: 'Estrutura',   custo: r.custoEstrutura,venda: r.custoEstrutura},
-    { icon: '🪣', label: 'Materiais',   custo: r.custoMat,      venda: r.custoMat      },
-  ];
-
-  cats.forEach(function(cat) {
-    if (!cat.custo && !cat.venda) return;
-    var lucro = (cat.venda || 0) - (cat.custo || 0);
-    h += '<div class="tum-dre-row">';
-    h += '<span style="font-size:.7rem;">' + cat.icon + ' ' + cat.label + '</span>';
-    h += '<span style="color:var(--t2);">R$ ' + fm(cat.custo || 0) + '</span>';
-    h += '<span style="color:#4cda80;">R$ ' + fm(cat.venda || 0) + '</span>';
-    h += '<span style="color:' + (lucro > 0 ? '#C9A84C' : lucro < 0 ? '#e07070' : 'var(--t3)') + ';">' + (lucro > 0 ? '+' : '') + 'R$ ' + fm(lucro) + '</span>';
-    h += '</div>';
-  });
-
-  h += '<div class="tum-dre-total">';
-  h += '<span>TOTAL</span>';
-  h += '<span>R$ ' + fm(r.custoTotal || 0) + '</span>';
-  h += '<span style="color:#4cda80;">R$ ' + fm(r.vendaTotal || 0) + '</span>';
-  h += '<span style="color:#C9A84C;">R$ ' + fm(r.lucroTotal || 0) + '</span>';
-  h += '</div></div>';
-
-  // ── Margem visual ─────────────────────────────────────────────
-  var margemPct = r.margemReal || 0;
-  var margemCor = margemPct >= 30 ? '#4cda80' : margemPct >= 20 ? '#C9A84C' : '#e07070';
-  var margemLabel = margemPct >= 30 ? 'Excelente ✅' : margemPct >= 20 ? 'Aceitável ⚠️' : 'Baixa 🔴';
-  h += '<div style="background:var(--s3);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin:12px 0;">';
-  h += '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">';
-  h += '<span style="font-size:.65rem;color:var(--t3);">Margem de lucro</span>';
-  h += '<span style="font-size:.8rem;font-weight:700;color:' + margemCor + ';">' + margemPct.toFixed(1) + '% — ' + margemLabel + '</span>';
-  h += '</div>';
-  h += '<div style="background:rgba(255,255,255,.06);border-radius:6px;height:8px;">';
-  h += '<div style="background:' + margemCor + ';border-radius:6px;height:8px;width:' + Math.min(margemPct, 100) + '%;transition:width .5s;"></div>';
-  h += '</div></div>';
-
-  // ── Precificação ──────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">💼 Ajuste de Preço</div>';
-  h += '<div class="tum-prec-box">';
-  h += '<div class="tum-grid2">';
-  h += '<div class="tum-f"><label class="tum-lbl">Margem adicional (%)</label>' +
-       '<input class="tum-in" type="number" min="0" max="200" value="' + (q.margem || 0) + '" onchange="TUM.q.margem=+this.value;tumRecalc()"></div>';
-  h += '<div class="tum-f"><label class="tum-lbl">Desconto R$</label>' +
-       '<input class="tum-in" type="number" min="0" value="' + (q.desconto || 0) + '" onchange="TUM.q.desconto=+this.value;tumRecalc()"></div>';
-  h += '</div>';
-  h += '<div class="tum-prec-breakdown">';
-  h += '<div class="tum-prec-row"><span>Custo real total</span><span>R$ ' + fm(r.custoTotal || 0) + '</span></div>';
-  h += '<div class="tum-prec-row"><span>Lucro embutido</span><span style="color:#4cda80;">+ R$ ' + fm(r.lucroTotal || 0) + '</span></div>';
-  if (q.margem > 0) h += '<div class="tum-prec-row"><span>Margem adicional (' + q.margem + '%)</span><span style="color:#4cda80;">+ R$ ' + fm(r.margemExtra || 0) + '</span></div>';
-  if (q.desconto > 0) h += '<div class="tum-prec-row"><span>Desconto</span><span style="color:#e07070;">− R$ ' + fm(q.desconto || 0) + '</span></div>';
-  h += '<div class="tum-prec-final"><span>💰 VALOR FINAL</span><span>R$ ' + fm(r.venda || 0) + '</span></div>';
-  h += '</div></div>';
-
-  // ── Cronograma ────────────────────────────────────────────────
-  var diasObra = (tipo.diasPedreiro || 0) + (q.gavetas || 0);
-  var diasMar  = tipo.diasMarmorista || 0;
-  var total    = diasObra + diasMar;
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">📅 Cronograma estimado</div>';
-  h += '<div class="tum-crono">';
-  h += '<div class="tum-crono-row">';
-  if (diasObra) h += '<div class="tum-crono-item" style="flex:' + diasObra + '"><div class="tum-crono-bar tum-crono-obra"></div><div class="tum-crono-lbl">Construção<br>' + diasObra + ' dias</div></div>';
-  if (diasMar)  h += '<div class="tum-crono-item" style="flex:' + diasMar  + '"><div class="tum-crono-bar tum-crono-mdo"></div><div class="tum-crono-lbl">Marmoraria<br>' + diasMar + ' dias</div></div>';
-  h += '</div>';
-  h += '<div class="tum-crono-total">⏱ Prazo estimado: <strong>' + total + ' dias úteis</strong></div>';
-  h += '</div>';
-
-  // ── Ficha técnica ─────────────────────────────────────────────
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">📋 Ficha Técnica</div>';
-  h += '<div class="tum-tech-box">';
-  var sel = q.stoneId && typeof CFG !== 'undefined' && CFG.stones ? CFG.stones.find(function(s) { return s.id === q.stoneId; }) : null;
-  var altTotal = q.dims.altEst + (q.gavetas * q.altPorGaveta) + q.dims.espLaje + q.dims.espTampa;
-  h += _techR('Tipo',        tipo.label || q.tipoBase);
-  h += _techR('Cliente',     q.cli || '—');
-  if (q.falecido)  h += _techR('Falecido',   q.falecido);
-  if (q.cemiterio) h += _techR('Cemitério',  q.cemiterio);
-  if (q.quadra)    h += _techR('Quadra/Lote',q.quadra);
-  h += _techR('Pedra',       sel ? sel.nm + ' (R$ ' + fm(sel.pr) + '/m²)' : 'Não selecionada');
-  h += _techR('Comprimento', q.dims.comp + ' m');
-  h += _techR('Largura',     q.dims.larg + ' m');
-  h += _techR('Altura total',altTotal.toFixed(2) + ' m');
-  h += _techR('Gavetas',     q.gavetas + (q.gavetas === 0 ? ' (sem compartimento)' : ' compartimento' + (q.gavetas > 1 ? 's' : '')));
-  h += _techR('Área c/ perda', fm(r.m2Total || 0) + ' m²');
-  if (q.lapide.on) h += _techR('Lápide', q.lapide.tipo);
-  if (q.cruz.on)   h += _techR('Cruz',   q.cruz.tipo + ' ' + q.cruz.modelo);
-  if (q.foto.on)   h += _techR('Foto',   q.foto.tamanho + (q.foto.moldura ? ' c/ moldura' : ''));
-  h += _techR('Data',  new Date().toLocaleDateString('pt-BR'));
-  h += '</div>';
-
-  // ── Foto de referência no resumo ──────────────────────────────
-  if (q.fotoModelo) {
-    h += '<div class="tum-sec-lbl" style="margin-top:14px;">📷 Referência Visual</div>';
-    h += '<img src="' + q.fotoModelo + '" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--bd2);">';
-  }
-  if (q.descModelo) {
-    h += '<div style="background:var(--s3);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:10px 13px;margin-top:8px;font-size:.72rem;color:var(--t2);line-height:1.6;">' + q.descModelo + '</div>';
-  }
-
-  h += '<div class="tum-sec-lbl" style="margin-top:16px;">📝 Observações</div>';
-  h += '<textarea class="tum-obs" rows="3" placeholder="Observações técnicas, pedidos especiais..." onchange="TUM.q.obs=this.value">' + (q.obs || '') + '</textarea>';
-
-  h += '<div class="tum-action-btns">';
-  h += '<button class="btn btn-g" onclick="tumSalvar()">💾 Salvar Orçamento</button>';
-  h += '<button class="btn btn-o" onclick="tumNovo()">🆕 Novo</button>';
-  h += '</div></div>';
-  return h;
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// CÁLCULO PRINCIPAL — automático e baseado em gavetas
-// ══════════════════════════════════════════════════════════════════════
-function _tumCalc() {
-  var q   = TUM.q;
-  var d   = q.dims;
-  var gav = q.gavetas;
-  var sel = q.stoneId && typeof CFG !== 'undefined' && CFG.stones
-    ? CFG.stones.find(function(s) { return s.id === q.stoneId; })
-    : null;
-  var stPr = sel ? sel.pr : (q.stonePrice || 0);
-
-  // ── Pedras ──────────────────────────────────────────────────────
-  var m2Liq = 0;
-  var custoPedra = 0;
-
-  Object.keys(q.pedras).forEach(function(k) {
-    var peca = q.pedras[k];
-    if (!peca || !peca.on) return;
-    var isML = (k === 'moldura' || k === 'pingadeira');
-    if (isML) {
-      // Custo da moldura/pingadeira é pelo vlrMl, não pelo m²
-      custoPedra += (peca.ml || 0) * (peca.vlrMl || 0);
-    } else {
-      m2Liq += (peca.m2 || 0);
-      custoPedra += (peca.m2 || 0) * stPr + (peca.extra || 0);
-    }
-  });
-
-  var m2Total    = m2Liq * (1 + (q.perda || 15) / 100);
-  custoPedra     = m2Total * stPr; // recalcula com perda
-
-  // Soma extras (moldura, pingadeira, acréscimos)
-  Object.keys(q.pedras).forEach(function(k) {
-    var peca = q.pedras[k];
-    if (!peca || !peca.on) return;
-    if (k === 'moldura')    custoPedra += (peca.ml || 0) * (peca.vlrMl || 120);
-    if (k === 'pingadeira') custoPedra += (peca.ml || 0) * (peca.vlrMl || 80);
-    if (peca.extra)         custoPedra += peca.extra;
-  });
-
-  var vendaPedra = custoPedra; // pedra: preço já é de venda
-
-  // ── Extras ──────────────────────────────────────────────────────
-  var custoLapide = 0, vendaLapide = 0;
-  if (q.lapide.on) {
-    custoLapide = q.lapide.custo + q.lapide.linhas * q.lapide.custoPorLinha;
-    vendaLapide = q.lapide.venda + q.lapide.linhas * q.lapide.vendaPorLinha;
-  }
-  var custoCruz = 0, vendaCruz = 0;
-  if (q.cruz.on) { custoCruz = q.cruz.custo; vendaCruz = q.cruz.venda; }
-
-  var custoFoto = 0, vendaFoto = 0;
-  if (q.foto.on) {
-    custoFoto = q.foto.custo + (q.foto.moldura ? q.foto.custoMoldura : 0);
-    vendaFoto = q.foto.venda + (q.foto.moldura ? q.foto.vendaMoldura : 0);
-  }
-
-  // ── Estrutura ───────────────────────────────────────────────────
-  var custoEstrutura = 0;
-  Object.keys(q.estrutura).forEach(function(k) {
-    var it = q.estrutura[k];
-    if (!it || !it.on) return;
-    var qty = it.m2 || it.m3 || it.kg || 0;
-    custoEstrutura += qty * (it.preco || 0);
-  });
-
-  // ── Materiais ────────────────────────────────────────────────────
-  var custoMat = 0;
-  Object.keys(q.mat).forEach(function(k) {
-    var it = q.mat[k];
-    if (!it || !it.on) return;
-    if (k === 'frete') { custoMat += it.vlr || 0; }
-    else               { custoMat += (it.qty || 0) * (it.preco || 0); }
-  });
-
-  // ── Mão de obra ──────────────────────────────────────────────────
-  var custoMdo = 0, vendaMdo = 0;
-  ['pedreiro','ajudante','marmorista'].forEach(function(k) {
-    var it = q.mdo[k];
-    if (it && it.on) {
-      var v = (it.dias || 0) * (it.diaria || 0);
-      custoMdo += v; vendaMdo += v;
-    }
-  });
-  ['acabamento','instalacao','transporte'].forEach(function(k) {
-    var it = q.mdo[k];
-    if (it && it.on) { custoMdo += it.custo || 0; vendaMdo += it.venda || 0; }
-  });
-  if (q.mdo.riscoQuebra && q.mdo.riscoQuebra.on) {
-    var rq = custoPedra * (q.mdo.riscoQuebra.perc || 0) / 100;
-    custoMdo += rq; vendaMdo += rq;
-  }
-
-  // ── Totais ───────────────────────────────────────────────────────
-  var custoTotal = custoPedra + custoLapide + custoCruz + custoFoto + custoMdo + custoEstrutura + custoMat;
-  var vendaTotal = vendaPedra + vendaLapide + vendaCruz + vendaFoto + vendaMdo + custoEstrutura + custoMat;
-  var lucroTotal = vendaTotal - custoTotal;
-
-  var margemExtra = vendaTotal * (q.margem || 0) / 100;
-  var venda       = vendaTotal + margemExtra - (q.desconto || 0);
-  var margemReal  = venda > 0 ? ((venda - custoTotal) / venda * 100) : 0;
-
-  return {
-    m2Liq, m2Total,
-    custoPedra, vendaPedra,
-    custoLapide, vendaLapide,
-    custoCruz, vendaCruz,
-    custoFoto, vendaFoto,
-    custoMdo, vendaMdo,
-    custoEstrutura, custoMat,
-    custoTotal, vendaTotal, lucroTotal,
-    margemExtra, venda, margemReal,
+  var map = {
+    dados:        _tabDados,
+    pedras:       _tabPedras,
+    acabamentos:  _tabAcabamentos,
+    resumo:       _tabResumo,
+    historico:    _tabHistorico
   };
+  var fn = map[TUM._tab] || _tabDados;
+  body.innerHTML = fn(r);
 }
-
-// ══════════════════════════════════════════════════════════════════════
-// AUTO-CÁLCULO — preenche áreas e quantidades automaticamente
-// ══════════════════════════════════════════════════════════════════════
-function _tumAutoCalc() {
-  var q   = TUM.q;
-  var d   = q.dims;
-  var gav = q.gavetas;
-  var c   = d.comp;
-  var l   = d.larg;
-  var ep  = d.espParede;
-  var el  = d.espLaje;
-  var et  = d.espTampa;
-  var ag  = q.altPorGaveta;
-
-  // Altura da estrutura base
-  d.altEst = 0.40;
-  // Altura total
-  var altTotal = d.altEst + gav * ag + el + et;
-
-  // ── Peças de pedra ────────────────────────────────────────────
-  var p = q.pedras;
-
-  // Tampa: comprimento × largura
-  if (p.tampa && !p.tampa._manual)
-    p.tampa.m2 = _r(c * l);
-
-  // Laterais: 2 × comprimento × altura total (ambos os lados)
-  if (p.laterais && !p.laterais._manual)
-    p.laterais.m2 = _r(c * altTotal * 2);
-
-  // Frente: largura × altura total
-  if (p.frente && !p.frente._manual)
-    p.frente.m2 = _r(l * altTotal);
-
-  // Fundo: igual à frente
-  if (p.fundo && !p.fundo._manual)
-    p.fundo.m2 = _r(l * altTotal);
-
-  // Revestimento externo: área total das faces externas
-  if (p.revestExt && !p.revestExt._manual)
-    p.revestExt.m2 = _r((c * 2 + l * 2) * altTotal);
-
-  // Lápide: 0.60 × 0.40 padrão
-  if (p.lapide && !p.lapide._manual)
-    p.lapide.m2 = _r(0.60 * 0.40);
-
-  // Moldura e pingadeira: perímetro
-  if (p.moldura && !p.moldura._ml_manual)
-    p.moldura.ml = _r((c + l) * 2);
-  if (p.pingadeira && !p.pingadeira._ml_manual)
-    p.pingadeira.ml = _r((c + l) * 2);
-
-  // ── Estrutura civil ───────────────────────────────────────────
-  var est = q.estrutura;
-  var volFund = _r(c * l * 0.20); // 20cm de base
-
-  if (est.fundacao && !est.fundacao._manual)  est.fundacao.m3 = volFund;
-  if (est.paredes  && !est.paredes._manual)   est.paredes.m2  = _r((c * 2 + l * 2) * altTotal);
-  if (est.laje     && !est.laje._manual)      est.laje.m2     = _r(c * l);
-
-  // Ferragem: aumenta com gavetas (15 kg/gaveta base + reforço)
-  var kgBase = c * l * 8;
-  if (est.reforco && !est.reforco._manual)
-    est.reforco.kg = _r(kgBase + gav * 15);
-
-  // Concreto armado para gavetas
-  if (est.concreto && !est.concreto._manual)
-    est.concreto.m3 = _r(c * l * el + gav * 0.12);
-
-  // ── Materiais ─────────────────────────────────────────────────
-  var mat = q.mat;
-  var vol = c * l * altTotal;
-
-  if (mat.cimento   && !mat.cimento._manual)   mat.cimento.qty   = Math.ceil(vol * 6);
-  if (mat.areia     && !mat.areia._manual)     mat.areia.qty     = _r(vol * 0.06);
-  if (mat.brita     && !mat.brita._manual)     mat.brita.qty     = _r(vol * 0.04);
-  if (mat.argamassa && !mat.argamassa._manual) mat.argamassa.qty = Math.ceil((c * l * 2 + c * altTotal * 2 + l * altTotal * 2) / 8);
-  if (mat.cola      && !mat.cola._manual)      mat.cola.qty      = Math.ceil((p.tampa && p.tampa.on ? p.tampa.m2 : 0) + (p.laterais && p.laterais.on ? p.laterais.m2 : 0) + (p.frente && p.frente.on ? p.frente.m2 : 0));
-  if (mat.rejunte   && !mat.rejunte._manual)   mat.rejunte.qty   = _r(((p.tampa && p.tampa.on ? p.tampa.m2 : 0) + (p.laterais && p.laterais.on ? p.laterais.m2 : 0)) * 0.5);
-  if (mat.ferro     && !mat.ferro._manual)     mat.ferro.qty     = _r(kgBase + gav * 15);
-
-  // ── Dias de mão de obra (automático por gavetas) ──────────────
-  var preset = TUM.TIPOS[q.tipoBase];
-  if (preset) {
-    var diasPed = (preset.diasPedreiro || 1) + gav;  // +1 dia por gaveta
-    var diasMar = preset.diasMarmorista || 1;
-    if (!q.mdo.pedreiro._manual)   { q.mdo.pedreiro.dias   = diasPed; }
-    if (!q.mdo.ajudante._manual)   { q.mdo.ajudante.dias   = diasPed; }
-    if (!q.mdo.marmorista._manual) { q.mdo.marmorista.dias = diasMar; }
-  }
-}
-
-function _r(v) { return Math.round(v * 100) / 100; }
-
-// ══════════════════════════════════════════════════════════════════════
-// SETTERS / TOGGLES
-// ══════════════════════════════════════════════════════════════════════
-function tumSetGavetas(n) {
-  TUM.q.gavetas = Math.max(0, Math.min(8, n));
-  tumRecalc();
-}
-
-function tumSetDim(key, val) {
-  TUM.q.dims[key] = +val;
-  tumRecalc();
-}
-
-function tumTogPedra(k, on) {
-  TUM.q.pedras[k].on = on;
-  tumRecalc();
-}
-
-function tumTogEst(k, on) {
-  TUM.q.estrutura[k].on = on;
-  tumRecalc();
-}
-
-function tumTogMat(k, on) {
-  TUM.q.mat[k].on = on;
-  tumRecalc();
-}
-
-function tumTogMdo(k, on) {
-  TUM.q.mdo[k].on = on;
-  tumRecalc();
-}
-
-function tumSetEst(k, field, val) {
-  if (TUM.q.estrutura[k]) {
-    TUM.q.estrutura[k][field] = val;
-    TUM.q.estrutura[k]._manual = true;
-  }
-  tumRecalc();
-}
-
-function tumSet(key, val) { TUM.q[key] = val; }
 
 function tumRecalc() {
-  _tumAutoCalc();
-  TUM.calc = _tumCalc();
-  _tumRenderTab();
-  // Atualiza hero sem re-render completo
+  _tumRecalc();
+  // Atualiza hero
+  var r  = TUM.calc || {};
+  var vf = r.valor_vista || 0;
   var hv = document.querySelector('.tum-hero-val');
-  if (hv) hv.textContent = TUM.calc.venda > 0 ? 'R$ ' + fm(TUM.calc.venda) : '—';
+  if (hv) hv.textContent = vf > 0 ? 'R$ '+(typeof fm==='function'?fm(vf):vf.toFixed(2)) : '—';
+  var hs = document.querySelector('.tum-hero-sub');
+  if (hs) {
+    var q = TUM.q;
+    var preset = TUM_PRESETS.find(function(p){return p.id===q.preset;});
+    hs.textContent = (preset?preset.nm:'') + (q.N>0?' · '+q.N+' gav.':'') + ' · '+q.C+'×'+q.L+' cm';
+  }
+  _tumRenderTab();
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// PRESET DE TIPO
-// ══════════════════════════════════════════════════════════════════════
-function tumSetTipo(t) {
-  var preset = TUM.TIPOS[t];
-  if (!preset) return;
-  TUM.q.tipoBase = t;
-  TUM.q.gavetas  = preset.gavetas;
-  TUM.q.dims.altEst = preset.altEst;
+// ─────────────────────────────────────────────────────────────────────
+// ABA: DADOS (cliente + preset + medidas em cm)
+// ─────────────────────────────────────────────────────────────────────
+function _tabDados(r) {
+  var q = TUM.q;
+  var h = '';
 
-  // Liga/desliga pedras conforme preset
-  Object.keys(TUM.q.pedras).forEach(function(k) { TUM.q.pedras[k].on = false; });
-  preset.pedras.forEach(function(k) { if (TUM.q.pedras[k]) TUM.q.pedras[k].on = true; });
+  // Cliente
+  h += _card('① Identificação',
+    '<div class="tum-grid2">' +
+    _fi('Nome do Cliente',  'text',   q.cli,       'tumSet("cli",this.value)', 'Ex: Maria Silva') +
+    _fi('Telefone',         'tel',    q.tel,       'tumSet("tel",this.value)', '(74) 99999-9999') +
+    '</div>' +
+    '<div class="tum-grid2">' +
+    _fi('Cemitério',        'text',   q.cemiterio, 'tumSet("cemiterio",this.value)', 'Nome do cemitério') +
+    _fi('Cidade',           'text',   q.cidade,    'tumSet("cidade",this.value)',    'Pilão Arcado — BA') +
+    '</div>' +
+    '<div class="tum-grid3">' +
+    _fi('Falecido(a)',      'text',   q.falecido,  'tumSet("falecido",this.value)',  'Nome') +
+    _fi('Quadra',           'text',   q.quadra,    'tumSet("quadra",this.value)',    'Q-12') +
+    _fi('Lote / Número',    'text',   q.lote,      'tumSet("lote",this.value)',      'L-04') +
+    '</div>'
+  );
 
-  // Liga/desliga estrutura
-  Object.keys(TUM.q.estrutura).forEach(function(k) { TUM.q.estrutura[k].on = false; });
-  preset.estrutura.forEach(function(k) { if (TUM.q.estrutura[k]) TUM.q.estrutura[k].on = true; });
-
-  // Liga materiais conforme necessidade do tipo
-  var usaConcreto = preset.estrutura.indexOf('concreto') > -1;
-  TUM.q.mat.brita.on    = usaConcreto;
-  TUM.q.mat.ferro.on    = usaConcreto;
-  TUM.q.mat.tijolos.on  = usaConcreto;
-
-  // Reseta flags manuais para recalcular
-  _tumResetManual();
-  _tumAutoCalc();
-  TUM.calc = _tumCalc();
-  renderTum();
-}
-
-function _tumResetManual() {
-  Object.keys(TUM.q.pedras).forEach(function(k) {
-    delete TUM.q.pedras[k]._manual;
-    delete TUM.q.pedras[k]._ml_manual;
+  // Presets
+  var pbh = '<div class="tum-presets">';
+  TUM_PRESETS.forEach(function(p) {
+    pbh += '<button class="tum-preset'+(q.preset===p.id?' on':'')+'" onclick="tumAplicarPreset(\''+p.id+'\')">'+
+      p.nm+'<span class="tum-preset-badge">'+p.badge+'</span></button>';
   });
-  Object.keys(TUM.q.estrutura).forEach(function(k) {
-    delete TUM.q.estrutura[k]._manual;
+  pbh += '</div>';
+  h += _card('② Tipo de Túmulo', pbh);
+
+  // Medidas em cm
+  var A_cm = r ? r.A_cm : (q.Ae + q.N*45 + q.E + 2);
+  var alerta = r && r.alertaGaveta
+    ? '<div class="tum-alerta">⚠ Espaço interno pode ser insuficiente para caixão padrão (mín. 175×55 cm interno). Verifique C e L.</div>'
+    : '';
+  var info = '<div class="tum-info-box">📐 <strong>Altura calculada automaticamente:</strong> A = Base ('+q.Ae+' cm) + ('+q.N+' gav × 45 cm) + Tampa ('+(q.E+2)+' cm) = <strong>'+_r2(A_cm)+' cm</strong></div>';
+
+  h += _card('③ Medidas <span style="font-size:.6rem;color:var(--t3)">(tudo em cm)</span>',
+    info + alerta +
+    '<div class="tum-grid3">' +
+    _fiN('Comprimento (cm)', q.C, 50, 500, 1, 'tumDim("C",this.value)', 'Tampa · Frente · Fundo') +
+    _fiN('Largura (cm)',     q.L, 30, 200, 1, 'tumDim("L",this.value)', 'Tampa · Laterais') +
+    _fiN('Espessura pedra (cm)', q.E, 2, 6, 0.5, 'tumDim("E",this.value)', '2–3cm lateral · 3–4cm tampa') +
+    '</div>' +
+    '<div class="tum-grid3">' +
+    _fiSel('Nº de Gavetas', q.N,
+      [[0,'0 — Simples'],[1,'1 Gaveta'],[2,'2 Gavetas'],[3,'3 Gavetas'],[4,'4 Gavetas']],
+      'tumDim("N",this.value)', 'Cada gaveta = +45 cm de altura') +
+    _fiN('Base estrutural (cm)', q.Ae, 10, 100, 5, 'tumDim("Ae",this.value)', 'Altura da base de concreto') +
+    _fiN('Rodapé de pedra (cm)', q.Ab, 0, 20, 1,   'tumDim("Ab",this.value)', '0 = sem rodapé') +
+    '</div>'
+  );
+
+  // Observações
+  h += _card('④ Observações',
+    '<textarea class="tum-obs" oninput="tumSet(\'obs\',this.value)" placeholder="Detalhes especiais, instruções de instalação, pedidos do cliente...">'+q.obs+'</textarea>'
+  );
+
+  h += '<button class="tum-btn-gold tum-btn-full" onclick="tumTab(\'pedras\')">Próximo: Pedras →</button>';
+  return h;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ABA: PEDRAS
+// ─────────────────────────────────────────────────────────────────────
+function _tabPedras(r) {
+  var q   = TUM.q;
+  var cfg = _tumCfg();
+  var h   = '';
+
+  // Material
+  var mh = '<div class="tum-mat-grid">';
+  cfg.pedras.forEach(function(p) {
+    var on = p.id === q.matId;
+    mh += '<button class="tum-mat'+(on?' on':'')+'" onclick="tumSelMat(\''+p.id+'\')">' +
+      '<div class="tum-mat-nm">'+p.nm+'</div>' +
+      '<div class="tum-mat-cat">'+p.cat+'</div>' +
+      '<div class="tum-mat-pr">R$ '+p.pr+'/m²</div>' +
+      '</button>';
   });
-  Object.keys(TUM.q.mat).forEach(function(k) {
-    delete TUM.q.mat[k]._manual;
+  mh += '</div>';
+  var matSel = cfg.pedras.find(function(x){return x.id===q.matId;});
+  if (matSel && r) {
+    var eMult = {2:'1,00×',3:'1,35×',4:'1,70×',5:'2,10×'};
+    mh += '<div class="tum-info-box">📊 '+matSel.nm+' · esp. '+q.E+'cm (mult. '+(eMult[q.E]||'1,35×')+') → R$ '+matSel.pr+' × '+eMult[q.E]+' = <strong>R$ '+_r2(matSel.pr*(r.espM||1.35)).toFixed(2)+'/m²</strong></div>';
+  }
+  h += _card('⑤ Material da Pedra', mh);
+
+  // Perda
+  h += _card('⑥ Fator de Perda (%)',
+    '<div class="tum-grid2">' +
+    _fiN('Perda no corte (%)', q.perda, 5, 30, 1, 'tumDimAdv("perda",this.value)', 'Padrão: 12% — recortes, emendas, rejeitos') +
+    '</div>' +
+    (r ? '<div class="tum-info-box">m² bruto: '+r.m2_bruto+' m² → com perda '+q.perda+'%: <strong>'+r.m2_total+' m²</strong> · Peso: '+r.peso_total+' kg</div>' : '')
+  );
+
+  // Peças incluídas
+  var ph = '';
+  TUM_PECAS_DEF.forEach(function(p) {
+    var on  = !!q.pecas[p.id];
+    var dim = '';
+    if (r && r.pecasCalc) {
+      var pc = r.pecasCalc.find(function(x){return x.nm.indexOf(p.nm.split('/')[0].trim()) > -1;});
+      if (pc) dim = pc.dim + ' = '+pc.m2+' m²';
+    }
+    ph += '<div class="tum-tog-row">' +
+      '<div class="tum-tog-info">' +
+        '<div class="tum-tog-nm">'+p.nm+'</div>' +
+        '<div class="tum-tog-sub">'+(dim||p.sub)+'</div>' +
+      '</div>' +
+      '<div class="tum-tog'+(on?' on':'')+'" onclick="tumTogPeca(\''+p.id+'\')"></div>' +
+    '</div>';
   });
-  delete TUM.q.mdo.pedreiro._manual;
-  delete TUM.q.mdo.ajudante._manual;
-  delete TUM.q.mdo.marmorista._manual;
+  h += _card('⑦ Peças Incluídas', ph);
+
+  h += '<button class="tum-btn-gold tum-btn-full" onclick="tumTab(\'acabamentos\')">Próximo: Acabamentos →</button>';
+  return h;
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// FOTO DO MODELO
-// ══════════════════════════════════════════════════════════════════════
-function tumFotoUpload() {
-  document.getElementById('tumFotoInp').click();
-}
+// ─────────────────────────────────────────────────────────────────────
+// ABA: ACABAMENTOS + OPCIONAIS
+// ─────────────────────────────────────────────────────────────────────
+function _tabAcabamentos(r) {
+  var q = TUM.q;
+  var h = '';
 
-function tumFotoOnFile(inp) {
-  var file = inp.files[0];
-  if (!file) return;
-  var r = new FileReader();
-  r.onload = function(ev) {
-    var img = new Image();
-    img.onload = function() {
-      var canvas = document.createElement('canvas');
-      var maxW = 800;
-      var scale = Math.min(1, maxW / img.width);
-      canvas.width  = Math.round(img.width  * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      TUM.q.fotoModelo = canvas.toDataURL('image/jpeg', 0.82);
-      tumRecalc();
-      renderTum();
-    };
-    img.src = ev.target.result;
-  };
-  r.readAsDataURL(file);
-  inp.value = '';
-}
-
-function tumFotoRemover() {
-  TUM.q.fotoModelo = '';
-  renderTum();
-}
-
-// ══════════════════════════════════════════════════════════════════════
-// STONE PICKER
-// ══════════════════════════════════════════════════════════════════════
-function tumOpenStonePick() {
-  if (!typeof CFG !== 'undefined' || !CFG || !CFG.stones) { toast('Nenhuma pedra cadastrada'); return; }
-  var h = '<div class="tum-stone-pick">';
-  CFG.stones.forEach(function(s) {
-    h += '<div class="tum-sp-row' + (TUM.q.stoneId === s.id ? ' on' : '') + '" onclick="tumPickStone(\'' + s.id + '\')">' +
-      '<div class="tum-sp-nm">' + s.nm + '</div>' +
-      '<div class="tum-sp-pr">R$ ' + fm(s.pr) + '/m²</div>' +
-      '</div>';
+  // Acabamentos
+  var ah = '<div class="tum-acab-grid">';
+  TUM_ACAB.forEach(function(a) {
+    var on = q.acabId === a.id;
+    ah += '<button class="tum-acab'+(on?' on':'')+'" onclick="tumSelAcab(\''+a.id+'\')">' +
+      '<div class="tum-acab-nm">'+a.nm+'</div>' +
+      '<div class="tum-acab-pr">'+(a.prML>0?'R$ '+a.prML+'/ml':'Grátis')+'</div>' +
+      '<div class="tum-acab-desc">'+a.desc+'</div>' +
+    '</button>';
   });
-  h += '</div>';
-  var listEl = document.getElementById('tumStoneList');
-  var mdEl   = document.getElementById('tumStoneMd');
-  if (listEl) listEl.innerHTML = h;
-  if (mdEl)   mdEl.classList.add('on');
+  ah += '</div>';
+  if (r && r.ml_total > 0) {
+    ah += '<div class="tum-info-box">📐 '+r.ml_total+' ml de borda ' +
+      '→ custo acabamento: <strong>R$ '+(typeof fm==='function'?fm(r.custo_acabamento):r.custo_acabamento.toFixed(2))+'</strong></div>';
+  }
+  h += _card('⑧ Tipo de Acabamento das Bordas', ah);
+
+  // Opcionais
+  var oh = '';
+  TUM_OPTS_DEF.forEach(function(o) {
+    var on = !!q.opts[o.id];
+    oh += '<div class="tum-tog-row">' +
+      '<div class="tum-tog-info">' +
+        '<div class="tum-tog-nm">'+o.nm+'</div>' +
+        '<div class="tum-tog-sub">'+o.sub+'</div>' +
+      '</div>' +
+      '<div class="tum-tog'+(on?' on':'')+'" onclick="tumTogOpt(\''+o.id+'\')"></div>' +
+    '</div>';
+  });
+  h += _card('⑨ Itens Opcionais', oh);
+
+  // Avançado
+  h += _card('⑩ Logística (Avançado)',
+    '<div class="tum-grid2">' +
+    _fiN('Frete cemitério (%)', q.fatorCem, 0, 50, 5,
+      'tumDimAdv("fatorCem",this.value)',
+      'Aplicado sobre materiais civis se "instalação em cemitério"') +
+    '</div>'
+  );
+
+  h += '<button class="tum-btn-gold tum-btn-full" onclick="tumTab(\'resumo\')">Ver Resumo →</button>';
+  return h;
 }
 
-function tumPickStone(id) {
-  TUM.q.stoneId = id;
-  var sel = typeof CFG !== 'undefined' && CFG.stones ? CFG.stones.find(function(s) { return s.id === id; }) : null;
-  if (sel) TUM.q.stonePrice = sel.pr;
-  var md = document.getElementById('tumStoneMd');
-  if (md) md.classList.remove('on');
+// ─────────────────────────────────────────────────────────────────────
+// ABA: RESUMO
+// ─────────────────────────────────────────────────────────────────────
+function _tabResumo(r) {
+  if (!r || !r.custo_total) {
+    return '<div class="tum-empty">Preencha os dados e volte ao resumo.</div>';
+  }
+  var q    = TUM.q;
+  var cfg  = _tumCfg();
+  var F    = function(v){ return typeof fm==='function'?fm(v):v.toFixed(2); };
+  var h    = '';
+
+  // Cards de números
+  h += '<div class="tum-res-grid">' +
+    _resCard('m² c/perda', r.m2_total+' m²', r.m2_bruto+' bruto') +
+    _resCard('ml bordas',  r.ml_total+' ml',  r.acab.nm) +
+    _resCard('Peso aprox.',Math.round(r.peso_total)+' kg', r.mat.nm+' '+q.E+'cm') +
+    _resCard('Custo Pedra','R$ '+F(r.custo_pedra), r.mat.nm, 'gold') +
+    _resCard('Construção', 'R$ '+F(r.custo_civil),  'Materiais civis') +
+    _resCard('Mão de Obra','R$ '+F(r.custo_mob),    'Fator ×'+r.Dif) +
+    _resCard('Acabamentos','R$ '+F(r.custo_acabamento), r.acab.nm) +
+    _resCard('Custo Total','R$ '+F(r.custo_total),  'Sem lucro') +
+    _resCard('Margem '+r.margem+'%','R$ '+F(r.lucro), r.margemReal+'% real', 'grn') +
+  '</div>';
+
+  // Detalhamento peças
+  h += _card('🪨 Peças de Pedra',
+    r.pecasCalc.map(function(p) {
+      return _dLine(p.nm+' <span class="tum-dim">'+p.dim+'</span>', p.m2+' m²');
+    }).join('') +
+    _dLine('Perda '+q.perda+'%', r.m2_total+' m² final') +
+    _dLine(r.mat.nm+' × esp.×'+({2:'1,00',3:'1,35',4:'1,70',5:'2,10'}[r.E]||'1,35'),
+           '<span style="color:var(--gold2)">R$ '+F(r.custo_pedra)+'</span>')
+  );
+
+  // Construção civil
+  h += _card('🧱 Construção Civil',
+    _dLine('Cimento CP-II',     r.sacos_cimento+' sacos') +
+    _dLine('Areia média',       r.m3_areia+' m³') +
+    _dLine('Brita 1',           r.m3_brita+' m³') +
+    _dLine('Argamassa AC-II',   r.sacos_argam+' sacos') +
+    _dLine('Ferro 3/8\" (barras)',r.barras_f38+' barras') +
+    _dLine('Ferro 5/16\" (barras)',r.barras_f516+' barras') +
+    (r.m2_malha>0 ? _dLine('Malha Q-92', r.m2_malha+' m²') : '') +
+    _dLine('Blocos 14×19×39',   r.unid_blocos+' un.') +
+    (q.opts.cemiterio ? _dLine('Frete cemitério (+'+q.fatorCem+'%)','<span style="color:var(--red)">aplicado</span>') : '') +
+    _dLine('Total civil', '<span style="color:var(--gold2)">R$ '+F(r.custo_civil)+'</span>', true)
+  );
+
+  // Mão de Obra
+  h += _card('🔨 Mão de Obra (fator dif. ×'+r.Dif+')',
+    _dLine('Pedreiro',        'R$ '+F(r.v_pedreiro)) +
+    _dLine('Ajudante',        'R$ '+F(r.v_ajudante)) +
+    _dLine('Instalação pedra','R$ '+F(r.v_instalacao)) +
+    _dLine('Montagem',        'R$ '+F(r.v_montagem)) +
+    _dLine('Transporte',      'R$ '+F(r.v_frete)) +
+    _dLine('Total M.O.', '<span style="color:var(--gold2)">R$ '+F(r.custo_mob)+'</span>', true)
+  );
+
+  // Extras
+  if (r.custo_extras > 0) {
+    h += _card('✨ Extras',
+      (q.opts.cruzGranito ? _dLine('Cruz em granito','R$ 350,00') : '') +
+      (q.opts.foto_porc   ? _dLine('Foto em porcelana','R$ 200,00') : '')
+    );
+  }
+
+  // Total final
+  h += '<div class="tum-total-box">' +
+    '<div class="tum-total-linha">' +
+      '<span>Custo interno</span>' +
+      '<span>R$ '+F(r.custo_total)+'</span>' +
+    '</div>' +
+    '<div class="tum-total-linha" style="color:var(--grn)">' +
+      '<span>Lucro ('+r.margem+'%)</span>' +
+      '<span>R$ '+F(r.lucro)+'</span>' +
+    '</div>' +
+    '<div class="tum-total-main">' +
+      '<span>À Vista</span>' +
+      '<span class="tum-total-val">R$ '+F(r.valor_vista)+'</span>' +
+    '</div>' +
+    '<div class="tum-total-parc">' +
+      'Parcelado: R$ '+F(r.valor_parc)+' — até '+r.parcMax+'× de R$ '+F(r.parc_mensal) +
+    '</div>' +
+    '<div class="tum-prazo">🕐 Prazo estimado: '+r.prazo_total+' dias úteis</div>' +
+  '</div>';
+
+  // Ações
+  h += '<div class="tum-acoes">' +
+    '<button class="tum-btn-gold" onclick="tumSalvar()">💾 Salvar</button>' +
+    '<button class="tum-btn-out" onclick="tumCopiarWA()">📲 WhatsApp</button>' +
+    '<button class="tum-btn-out" onclick="tumNovo()">🆕 Novo</button>' +
+  '</div>';
+
+  return h;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// ABA: HISTÓRICO
+// ─────────────────────────────────────────────────────────────────────
+function _tabHistorico() {
+  var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+    '<span style="font-size:.72rem;color:var(--t3)">'+TUM._hist.length+' orçamentos salvos</span>' +
+    '<button class="tum-btn-out tum-btn-sm" onclick="tumLimparHist()">🗑 Limpar</button>' +
+  '</div>';
+
+  if (!TUM._hist.length) {
+    return h + '<div class="tum-empty">📋 Nenhum orçamento salvo ainda.<br>Preencha o formulário e salve.</div>';
+  }
+
+  var F = function(v){ return typeof fm==='function'?fm(v):v.toFixed(2); };
+  TUM._hist.forEach(function(o, i) {
+    var r = o.r || {};
+    h += '<div class="tum-hist-card" onclick="tumVerHist('+i+')">' +
+      '<div class="tum-hist-row">' +
+        '<span class="tum-hist-cli">'+(o.cli||'Cliente')+'</span>' +
+        '<span class="tum-hist-val">R$ '+F(r.valor_vista||0)+'</span>' +
+      '</div>' +
+      '<div class="tum-hist-meta">' +
+        (o.falecido?'<span>⚰️ '+o.falecido+'</span>':'') +
+        (o.cemiterio?'<span>🏛 '+o.cemiterio+'</span>':'') +
+        '<span>'+(o.matNm||'')+'</span>' +
+        '<span>'+(o.N||0)+' gav.</span>' +
+        '<span>'+o.date+'</span>' +
+      '</div>' +
+      '<div class="tum-hist-badges">' +
+        '<span class="tum-badge">'+(r.m2_total||0)+'m²</span>' +
+        '<span class="tum-badge" style="color:var(--grn)">'+(r.prazo_total||'?')+'d</span>' +
+      '</div>' +
+    '</div>';
+  });
+  return h;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// SETTERS
+// ─────────────────────────────────────────────────────────────────────
+function tumSet(key, val) {
+  TUM.q[key] = val;
+}
+
+function tumDim(key, val) {
+  TUM.q[key] = +val;
   tumRecalc();
-  renderTum();
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// SALVAR / NOVO
-// ══════════════════════════════════════════════════════════════════════
+function tumDimAdv(key, val) {
+  TUM.q[key] = +val;
+  tumRecalc();
+}
+
+function tumAplicarPreset(id) {
+  var p  = TUM_PRESETS.find(function(x){return x.id===id;});
+  var pp = TUM_PRESET_PECAS[id];
+  if (!p) return;
+  TUM.q.preset = id;
+  TUM.q.C  = p.C;
+  TUM.q.L  = p.L;
+  TUM.q.E  = p.E;
+  TUM.q.N  = p.N;
+  TUM.q.Ae = p.Ae;
+  TUM.q.Ab = p.Ab;
+  if (pp) TUM.q.pecas = JSON.parse(JSON.stringify(pp));
+  tumRecalc();
+  if (typeof toast === 'function') toast('✓ Preset: '+p.nm);
+}
+
+function tumSelMat(id) {
+  TUM.q.matId = id;
+  tumRecalc();
+}
+
+function tumSelAcab(id) {
+  TUM.q.acabId = id;
+  tumRecalc();
+}
+
+function tumTogPeca(id) {
+  TUM.q.pecas[id] = !TUM.q.pecas[id];
+  tumRecalc();
+}
+
+function tumTogOpt(id) {
+  TUM.q.opts[id] = !TUM.q.opts[id];
+  tumRecalc();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// SALVAR / EXPORTAR
+// ─────────────────────────────────────────────────────────────────────
 function tumSalvar() {
+  var q = TUM.q;
   var r = TUM.calc;
-  if (!TUM.q.cli) { toast('Informe o cliente'); return; }
-  var sel = TUM.q.stoneId && typeof CFG !== 'undefined' && CFG.stones
-    ? CFG.stones.find(function(s) { return s.id === TUM.q.stoneId; })
-    : null;
-  var tipoLabel = TUM.TIPOS[TUM.q.tipoBase] ? TUM.TIPOS[TUM.q.tipoBase].label : TUM.q.tipoBase;
-  DB.q.unshift({
+  if (!q.cli) { if(typeof toast==='function') toast('⚠ Informe o nome do cliente'); return; }
+  if (!r)     { if(typeof toast==='function') toast('⚠ Calcule o orçamento primeiro'); return; }
+
+  var cfg     = _tumCfg();
+  var matNm   = (cfg.pedras.find(function(x){return x.id===q.matId;})||{}).nm || 'Pedra';
+  var preset  = TUM_PRESETS.find(function(x){return x.id===q.preset;});
+  var tipo    = 'Túmulo — '+(preset?preset.nm:q.preset)+(q.N>0?' '+q.N+'G':'');
+
+  // Histórico local
+  var rec = {
     id: Date.now(),
-    tipo: 'Túmulo — ' + tipoLabel,
-    cli:  TUM.q.cli,
-    mat:  sel ? sel.nm : 'Pedra',
-    vista:    r.venda,
-    prazo:    r.venda,
-    ent:      r.venda * 0.5,
-    custo:    r.custoTotal,
-    lucro:    r.lucroTotal,
-    margemReal: r.margemReal,
-    obs:  TUM.q.obs,
-    tum:  JSON.parse(JSON.stringify(TUM.q)),
-    tumCalc: JSON.parse(JSON.stringify(r)),
-    dt:   typeof td === 'function' ? td() : new Date().toISOString().split('T')[0],
-    date: typeof td === 'function' ? td() : new Date().toISOString().split('T')[0],
-  });
-  if (typeof DB !== 'undefined') DB.sv();
-  toast('✅ Orçamento de túmulo salvo!');
+    date: typeof td === 'function' ? td() : new Date().toLocaleDateString('pt-BR'),
+    cli: q.cli, tel: q.tel,
+    cemiterio: q.cemiterio, cidade: q.cidade,
+    falecido: q.falecido, quadra: q.quadra, lote: q.lote,
+    obs: q.obs,
+    preset: q.preset, N: q.N,
+    matNm: matNm, acabNm: (TUM_ACAB.find(function(x){return x.id===q.acabId;})||{}).nm||'',
+    r: JSON.parse(JSON.stringify(r)),
+    q: JSON.parse(JSON.stringify(q))
+  };
+  TUM._hist.unshift(rec);
+  if (TUM._hist.length > 50) TUM._hist.pop();
+  localStorage.setItem('hr_tum_hist', JSON.stringify(TUM._hist));
+
+  // Salvar no DB do app (compatibilidade)
+  if (typeof DB !== 'undefined' && DB.q) {
+    DB.q.unshift({
+      id:   rec.id,
+      tipo: tipo,
+      cli:  q.cli,
+      mat:  matNm,
+      vista:    r.valor_vista,
+      prazo:    r.valor_vista,
+      ent:      r.valor_vista * 0.5,
+      custo:    r.custo_total,
+      lucro:    r.lucro,
+      margemReal: r.margemReal,
+      obs:  q.obs,
+      tum:  JSON.parse(JSON.stringify(q)),
+      tumCalc: JSON.parse(JSON.stringify(r)),
+      dt:   rec.date,
+      date: rec.date
+    });
+    if (typeof DB.sv === 'function') DB.sv();
+  }
+
+  if (typeof toast === 'function') toast('✅ Orçamento salvo!');
 }
 
 function tumNovo() {
   if (!confirm('Limpar orçamento atual?')) return;
-  TUM.q.cli = ''; TUM.q.falecido = ''; TUM.q.cemiterio = '';
-  TUM.q.quadra = ''; TUM.q.obs = ''; TUM.q.fotoModelo = '';
-  TUM.q.descModelo = ''; TUM.q.stoneId = null; TUM.q.stonePrice = 0;
-  TUM.q.lapide.on = false; TUM.q.cruz.on = false; TUM.q.foto.on = false;
-  _tumResetManual();
-  tumSetTipo('simples');
+  var q = TUM.q;
+  q.cli=''; q.tel=''; q.cemiterio=''; q.cidade='';
+  q.falecido=''; q.quadra=''; q.lote=''; q.obs='';
+  q.fotoModelo=''; q.descModelo='';
+  q.opts = { cemiterio:false, polido_extra:false, gravacao:false, cruzGranito:false, foto_porc:false };
+  tumAplicarPreset('dupla');
+  TUM._tab = 'dados';
+  _tumRender();
+  if (typeof toast === 'function') toast('✓ Novo orçamento');
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// HELPERS DE RENDER
-// ══════════════════════════════════════════════════════════════════════
-function _pecaRow(k, label, on, sub1, sub2, detailHtml, toggleFn) {
-  var h = '<div class="tum-peca-row' + (on ? '' : ' tum-peca-off') + '">';
-  h += '<div class="tum-peca-header">';
-  h += '<label class="tum-tog"><input type="checkbox"' + (on ? ' checked' : '') + ' onchange="' + (toggleFn || 'tumTogPedra') + '(\'' + k + '\',this.checked)"><span class="tum-tog-slider"></span></label>';
-  h += '<div class="tum-peca-label">' + label + '</div>';
-  if (on && (sub1 || sub2)) {
-    h += '<div class="tum-peca-val" style="font-size:.6rem;text-align:right;">';
-    if (sub1) h += '<span style="color:var(--t3);">' + sub1 + '</span>';
-    if (sub1 && sub2) h += '<br>';
-    if (sub2) h += '<span style="color:#4cda80;">' + sub2 + '</span>';
-    h += '</div>';
+function tumCopiarWA() {
+  var q = TUM.q;
+  var r = TUM.calc;
+  if (!r) return;
+  var F  = function(v){ return typeof fm==='function'?fm(v):v.toFixed(2); };
+  var cfg = _tumCfg();
+  var emp = (typeof CFG !== 'undefined' && CFG.emp) ? CFG.emp : { nome:'HR Mármores', tel:'' };
+  var matNm = (cfg.pedras.find(function(x){return x.id===q.matId;})||{}).nm||'';
+
+  var txt = emp.nome+'\nORÇAMENTO DE TÚMULO\n';
+  txt += '─────────────────────\n';
+  txt += 'Cliente: '+q.cli+'\n';
+  if (q.falecido)  txt += 'Falecido(a): '+q.falecido+'\n';
+  if (q.cemiterio) txt += 'Cemitério: '+q.cemiterio+(q.cidade?', '+q.cidade:'')+'\n';
+  if (q.quadra||q.lote) txt += 'Quadra '+q.quadra+' Lote '+q.lote+'\n';
+  txt += '\nMODELO\n';
+  txt += 'Tipo: '+(TUM_PRESETS.find(function(p){return p.id===q.preset;})||{}).nm||q.preset;
+  txt += '\nMedidas: '+q.C+'×'+q.L+' cm · Alt. '+_r2(r.A_cm)+' cm';
+  txt += '\nGavetas: '+q.N;
+  txt += '\nMaterial: '+matNm+' '+q.E+'cm';
+  txt += '\nm²: '+r.m2_total+' (c/perdas)';
+  txt += '\n\nVALORES\n─────────────────────\n';
+  txt += 'À vista: R$ '+F(r.valor_vista)+'\n';
+  txt += 'Parcelado: até '+r.parcMax+'× de R$ '+F(r.parc_mensal)+'\n';
+  txt += 'Prazo: ~'+r.prazo_total+' dias úteis\n';
+  txt += '─────────────────────\n';
+  txt += emp.nome+(emp.tel?'\n'+emp.tel:'');
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(txt).then(function(){ if(typeof toast==='function') toast('✓ Copiado!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.cssText = 'position:fixed;top:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (typeof toast === 'function') toast('✓ Copiado!');
   }
-  h += '</div>';
-  if (on && detailHtml) h += '<div class="tum-peca-detail">' + detailHtml + '</div>';
-  h += '</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// HISTÓRICO
+// ─────────────────────────────────────────────────────────────────────
+function tumVerHist(i) {
+  var o = TUM._hist[i];
+  if (!o) return;
+  if (o.q) TUM.q = JSON.parse(JSON.stringify(o.q));
+  TUM.calc = o.r ? JSON.parse(JSON.stringify(o.r)) : null;
+  TUM._tab = 'resumo';
+  _tumRender();
+}
+
+function tumLimparHist() {
+  if (!confirm('Limpar todo o histórico de orçamentos?')) return;
+  TUM._hist = [];
+  localStorage.setItem('hr_tum_hist', '[]');
+  _tumRenderTab();
+  if (typeof toast === 'function') toast('✓ Histórico limpo');
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// CONFIG TAB — injeta aba ⚰️ Túmulos na Config do app
+// ─────────────────────────────────────────────────────────────────────
+function _tumInjectCfgTab() {
+  var cfgTabs = document.getElementById('cfgTabs');
+  if (cfgTabs && !cfgTabs.querySelector('[data-cftab="7"]')) {
+    var btn = document.createElement('div');
+    btn.className = 'cfgtab';
+    btn.setAttribute('data-cftab','7');
+    btn.textContent = '⚰️ Túmulos';
+    cfgTabs.appendChild(btn);
+  }
+  if (typeof buildCfg === 'function' && !buildCfg._tumPatched) {
+    var _orig = buildCfg;
+    buildCfg = function() {
+      if (typeof cfgTab !== 'undefined' && cfgTab === 7) {
+        _tumInitCfg();
+        var body = document.getElementById('cfgBody');
+        if (body) body.innerHTML = _tumBuildCfgUI();
+      } else {
+        _orig();
+      }
+    };
+    buildCfg._tumPatched = true;
+  }
+}
+
+function _tumBuildCfgUI() {
+  var tc  = _tumCfg();
+  var F   = function(f, id, val, label) {
+    return '<div class="cfg-row"><div class="cfg-k">'+label+'</div>' +
+      '<input class="cfg-inp" type="number" step="any" value="'+val+'" ' +
+      'oninput="CFG.tumCfg.'+f+'[\''+id+'\']=+this.value;svCFG()"></div>';
+  };
+  var h = '';
+
+  // Margem e parcelamento
+  h += '<div class="tum-cfg-sec">💰 Preços e Margens</div>';
+  h += '<div class="cfg-row"><div class="cfg-k">Margem de lucro (%)</div>' +
+    '<input class="cfg-inp" type="number" min="0" max="200" value="'+tc.margem+'" ' +
+    'oninput="CFG.tumCfg.margem=+this.value;svCFG()"></div>';
+  h += '<div class="cfg-row"><div class="cfg-k">Parcelas máx. (cartão)</div>' +
+    '<input class="cfg-inp" type="number" min="1" max="18" value="'+tc.parcMax+'" ' +
+    'oninput="CFG.tumCfg.parcMax=+this.value;svCFG()"></div>';
+  h += '<div class="cfg-row"><div class="cfg-k">Juros parcelado (%)</div>' +
+    '<input class="cfg-inp" type="number" min="0" max="50" step="0.5" value="'+tc.juros+'" ' +
+    'oninput="CFG.tumCfg.juros=+this.value;svCFG()"></div>';
+
+  // Pedras
+  h += '<div class="tum-cfg-sec" style="margin-top:16px">🪨 Pedras — Preço por m² (3cm)</div>';
+  tc.pedras.forEach(function(p, i) {
+    h += '<div class="cfg-row">' +
+      '<div class="cfg-k">'+p.nm+' <span style="font-size:.6rem;color:var(--t4)">'+p.cat+'</span></div>' +
+      '<div style="display:flex;gap:6px;align-items:center">' +
+      '<input class="cfg-inp" type="number" min="0" value="'+p.pr+'" style="width:80px" ' +
+      'oninput="CFG.tumCfg.pedras['+i+'].pr=+this.value;svCFG()">' +
+      '<button onclick="tumCfgRemPedra('+i+')" style="background:rgba(192,90,74,.15);border:1px solid rgba(192,90,74,.3);color:var(--red);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:.7rem">✕</button>' +
+      '</div></div>';
+  });
+  h += '<button onclick="tumCfgAddPedra()" style="width:100%;padding:8px;margin-top:6px;background:var(--bg3);border:1px dashed var(--bd2);border-radius:8px;color:var(--t3);cursor:pointer;font-size:.72rem">+ Adicionar pedra</button>';
+
+  // MO
+  h += '<div class="tum-cfg-sec" style="margin-top:16px">🔨 Mão de Obra (R$/dia ou fixo)</div>';
+  ['pedreiro','ajudante','instalacao','montagem','transporte'].forEach(function(k) {
+    var labels = {pedreiro:'Pedreiro (R$/dia)',ajudante:'Ajudante (R$/dia)',
+                  instalacao:'Instalação pedra (R$/dia)',montagem:'Montagem (R$/dia)',transporte:'Transporte (R$ fixo)'};
+    h += F('mob', k, tc.mob[k], labels[k]);
+  });
+
+  // Materiais civis
+  h += '<div class="tum-cfg-sec" style="margin-top:16px">🧱 Materiais Civis</div>';
+  var civLabels = {
+    cimento:'Cimento CP-II (saco 50kg)', areia:'Areia média (m³)', brita:'Brita 1 (m³)',
+    argamassa:'Argamassa AC-II (saco 20kg)', ferro38:'Ferro 3/8\" (barra 12m)',
+    ferro516:'Ferro 5/16\" (barra 12m)', malha:'Malha Q-92 (m²)', blocos:'Blocos 14×19×39 (un.)'
+  };
+  Object.keys(civLabels).forEach(function(k) {
+    h += F('civil', k, tc.civil[k], civLabels[k]);
+  });
+
+  // Reset
+  h += '<button onclick="tumCfgReset()" style="width:100%;padding:10px;margin-top:14px;background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;color:var(--t3);cursor:pointer;font-size:.72rem">↺ Restaurar padrões</button>';
   return h;
 }
 
-function _extraHd(label, key, on) {
-  return '<div class="tum-extra-hd" onclick="TUM.q.' + key + '.on=!TUM.q.' + key + '.on;tumRecalc()">' +
-    '<label class="tum-tog" onclick="event.stopPropagation()"><input type="checkbox"' + (on ? ' checked' : '') +
-    ' onchange="TUM.q.' + key + '.on=this.checked;tumRecalc()"><span class="tum-tog-slider"></span></label>' +
-    '<span style="font-size:.8rem;font-weight:600;color:' + (on ? 'var(--gold2)' : 'var(--t2)') + ';">' + label + '</span>' +
-    '</div>';
+function tumCfgAddPedra() {
+  var nm = prompt('Nome da pedra:'); if (!nm) return;
+  var pr = +prompt('Preço por m² (R$):') || 200;
+  CFG.tumCfg.pedras.push({ id:'p_'+Date.now(), nm:nm, cat:'Personalizado', pr:pr, peso:75 });
+  if (typeof svCFG === 'function') svCFG();
+  if (typeof buildCfg === 'function') buildCfg();
+  if (typeof toast   === 'function') toast('✓ Pedra adicionada!');
 }
 
-function _miniRes(label, custo, venda) {
-  var lucro   = venda - custo;
-  var margem  = venda > 0 ? (lucro / venda * 100) : 0;
-  return '<div style="display:flex;gap:8px;background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;margin-top:8px;">' +
-    '<div style="flex:1;text-align:center;"><div style="font-size:.52rem;color:var(--t4);">Custo</div><div style="font-size:.72rem;font-weight:700;color:var(--t2);">R$ ' + fm(custo) + '</div></div>' +
-    '<div style="flex:1;text-align:center;"><div style="font-size:.52rem;color:var(--t4);">Venda</div><div style="font-size:.72rem;font-weight:700;color:#4cda80;">R$ ' + fm(venda) + '</div></div>' +
-    '<div style="flex:1;text-align:center;"><div style="font-size:.52rem;color:var(--t4);">Lucro</div><div style="font-size:.72rem;font-weight:700;color:#C9A84C;">' + margem.toFixed(0) + '%</div></div>' +
-    '</div>';
+function tumCfgRemPedra(i) {
+  if (CFG.tumCfg.pedras.length <= 1) { if(typeof toast==='function') toast('Precisa ter ao menos 1 pedra'); return; }
+  CFG.tumCfg.pedras.splice(i, 1);
+  if (typeof svCFG   === 'function') svCFG();
+  if (typeof buildCfg === 'function') buildCfg();
 }
 
-function _totRow(label, val, bold, cor) {
-  return '<div class="tum-total-row' + (bold ? ' tum-total-big' : '') + '">' +
-    '<span>' + label + '</span>' +
-    '<span' + (cor ? ' style="color:' + (cor === 'grn' ? '#4cda80' : cor === 'gold' ? '#C9A84C' : 'inherit') + '"' : '') + '>' + val + '</span>' +
-    '</div>';
+function tumCfgReset() {
+  if (!confirm('Restaurar todos os padrões de configuração de túmulos?')) return;
+  CFG.tumCfg = JSON.parse(JSON.stringify(TUM_DEF_CFG));
+  if (typeof svCFG   === 'function') svCFG();
+  if (typeof buildCfg === 'function') buildCfg();
+  if (typeof toast   === 'function') toast('✓ Padrões restaurados');
 }
 
-function _techR(l, v) {
-  return '<div class="tum-tech-row"><span class="tum-tech-l">' + l + '</span><span class="tum-tech-v">' + v + '</span></div>';
+// ─────────────────────────────────────────────────────────────────────
+// HELPERS DE RENDER
+// ─────────────────────────────────────────────────────────────────────
+function _card(title, body) {
+  return '<div class="tum-card">' +
+    '<div class="tum-card-hd"><span class="tum-card-title">'+title+'</span></div>' +
+    '<div class="tum-card-body">'+body+'</div>' +
+  '</div>';
 }
 
-function _tIn(type, label, val, onchange, ph) {
-  return '<div class="tum-f"><label class="tum-lbl">' + label + '</label>' +
-    '<input class="tum-in" type="' + type + '" value="' + (val || '') + '" placeholder="' + (ph || '') + '" onchange="' + onchange + '"></div>';
+function _fi(label, type, val, onin, ph) {
+  return '<div class="tum-f"><label>'+label+'</label>' +
+    '<input type="'+type+'" value="'+(val||'')+'" placeholder="'+(ph||'')+'" oninput="'+onin+'"></div>';
 }
 
-function _tDim(label, key, val, ph) {
-  return '<div class="tum-f"><label class="tum-lbl">' + label + '</label>' +
-    '<input class="tum-in" type="number" step="0.01" value="' + val + '" placeholder="' + ph + '" ' +
-    'onchange="TUM.q.dims.' + key + '=+this.value;tumRecalc()"></div>';
+function _fiN(label, val, min, max, step, onin, hint) {
+  return '<div class="tum-f"><label>'+label+'</label>' +
+    '<input type="number" value="'+val+'" min="'+min+'" max="'+max+'" step="'+step+'" oninput="'+onin+'">' +
+    (hint?'<span class="tum-hint">'+hint+'</span>':'')+'</div>';
 }
 
-// ══════════════════════════════════════════════════════════════════════
-// CSS ADICIONAL
-// ══════════════════════════════════════════════════════════════════════
-(function _injectTumCSS() {
+function _fiSel(label, val, opts, onin, hint) {
+  var sel = '<select onchange="'+onin+'">';
+  opts.forEach(function(o){ sel += '<option value="'+o[0]+'"'+(+val===+o[0]?' selected':'')+'>'+o[1]+'</option>'; });
+  sel += '</select>';
+  return '<div class="tum-f"><label>'+label+'</label>'+sel+(hint?'<span class="tum-hint">'+hint+'</span>':'')+'</div>';
+}
+
+function _resCard(lbl, val, sub, cls) {
+  return '<div class="tum-res-card"><div class="tum-res-lbl">'+lbl+'</div>' +
+    '<div class="tum-res-val'+(cls?' tum-res-'+cls:'')+'">'+val+'</div>' +
+    (sub?'<div class="tum-res-sub">'+sub+'</div>':'') +
+  '</div>';
+}
+
+function _dLine(k, v, bold) {
+  return '<div class="tum-det-line'+(bold?' tum-det-bold':'')+'"><span class="tum-det-k">'+k+'</span><span class="tum-det-v">'+v+'</span></div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// CSS
+// ─────────────────────────────────────────────────────────────────────
+(function _tumCSS() {
+  if (document.getElementById('tum-styles')) return;
   var s = document.createElement('style');
+  s.id = 'tum-styles';
   s.textContent = `
-    /* ── DRE TABLE ── */
-    .tum-dre-table{background:var(--s3);border:1px solid var(--bd2);border-radius:14px;overflow:hidden;margin-bottom:12px;}
-    .tum-dre-head{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;padding:8px 12px;background:rgba(201,168,76,.08);border-bottom:1px solid var(--bd2);}
-    .tum-dre-head span{font-size:.52rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--t4);font-weight:700;}
-    .tum-dre-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);}
-    .tum-dre-row span{font-size:.68rem;color:var(--t2);}
-    .tum-dre-total{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;padding:10px 12px;background:rgba(201,168,76,.06);border-top:1px solid rgba(201,168,76,.2);}
-    .tum-dre-total span{font-size:.72rem;font-weight:700;color:var(--tx);}
-
-    /* ── EXTRAS ── */
-    .tum-extra-hd{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--s3);border:1px solid var(--bd2);border-radius:12px;margin-bottom:6px;cursor:pointer;margin-top:10px;}
-    .tum-extra-body{background:var(--s2);border:1px solid var(--bd2);border-radius:0 0 12px 12px;padding:14px;margin-top:-6px;margin-bottom:10px;}
-
-    /* ── FOTO ÁREA ── */
-    .tum-foto-area{margin-bottom:10px;}
-    .tum-foto-empty{border:2px dashed var(--bd2);border-radius:12px;padding:24px 16px;text-align:center;cursor:pointer;transition:border-color .2s;}
-    .tum-foto-empty:active{border-color:var(--gold);}
-
-    /* ── GAVETA BOTÕES ── */
-    .tum-gav-btn{width:48px;height:48px;border-radius:50%;background:var(--s3);border:1.5px solid var(--bd2);color:var(--gold2);font-size:1.4rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:Outfit,sans-serif;flex-shrink:0;}
-    .tum-gav-btn:active{background:var(--s4);}
-
-    /* ── CRONO ── */
-    .tum-crono{background:var(--s3);border:1px solid var(--bd2);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
-    .tum-crono-row{display:flex;gap:4px;margin-bottom:8px;}
-    .tum-crono-item{display:flex;flex-direction:column;gap:4px;min-width:40px;}
-    .tum-crono-bar{height:12px;border-radius:4px;}
-    .tum-crono-obra{background:#483828;}
-    .tum-crono-mdo{background:#4a80b5;}
-    .tum-crono-lbl{font-size:.52rem;color:var(--t3);line-height:1.4;}
-    .tum-crono-total{font-size:.68rem;color:var(--t2);font-weight:600;border-top:1px solid var(--bd2);padding-top:8px;}
-
-    /* ── PREC BOX ── */
-    .tum-prec-box{background:var(--s3);border:1px solid var(--bd2);border-radius:14px;padding:14px;margin-bottom:12px;}
-    .tum-prec-breakdown{margin-top:12px;border-top:1px solid var(--bd2);padding-top:10px;}
-    .tum-prec-row{display:flex;justify-content:space-between;padding:5px 0;font-size:.68rem;color:var(--t3);border-bottom:1px solid rgba(255,255,255,.04);}
-    .tum-prec-final{display:flex;justify-content:space-between;padding:10px 0 2px;font-size:.85rem;font-weight:800;color:var(--gold2);}
-
-    /* ── WARN ── */
-    .tum-warn{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:10px 13px;font-size:.68rem;color:var(--gold3);margin-bottom:10px;}
-    .tum-info-box{background:rgba(100,180,255,.06);border:1px solid rgba(100,180,255,.15);border-radius:10px;padding:10px 13px;font-size:.65rem;color:var(--t3);margin-bottom:10px;line-height:1.6;}
-
-    /* ── STONE PICK ── */
-    .tum-stone-pick{display:flex;flex-direction:column;gap:4px;}
-    .tum-sp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;background:var(--s2);border:1px solid var(--bd2);border-radius:10px;cursor:pointer;}
-    .tum-sp-row.on{border-color:var(--gold);background:rgba(201,168,76,.08);}
-    .tum-sp-nm{font-size:.76rem;font-weight:600;color:var(--t2);}
-    .tum-sp-pr{font-size:.68rem;color:var(--gold2);}
-
-    /* ── TOTALS ── */
-    .tum-total-box{background:var(--s3);border:1px solid var(--bd2);border-radius:12px;overflow:hidden;margin-top:10px;}
-    .tum-total-row{display:flex;justify-content:space-between;padding:8px 13px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.7rem;color:var(--t2);}
-    .tum-total-big{background:rgba(201,168,76,.05);font-weight:700;font-size:.76rem;color:var(--tx);}
-
-    /* ── TECH BOX ── */
-    .tum-tech-box{background:var(--s3);border:1px solid var(--bd2);border-radius:12px;overflow:hidden;}
-    .tum-tech-row{display:flex;justify-content:space-between;padding:8px 13px;border-bottom:1px solid rgba(255,255,255,.04);}
-    .tum-tech-l{font-size:.62rem;color:var(--t4);}
-    .tum-tech-v{font-size:.66rem;color:var(--t2);font-weight:600;text-align:right;max-width:60%;}
-
-    /* ── STONE ROW ── */
-    .tum-stone-row{display:flex;align-items:center;gap:10px;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;}
-    .tum-stone-sel{flex:1;}
-    .tum-stone-nm{font-size:.76rem;font-weight:700;color:var(--t2);}
-    .tum-stone-pr{font-size:.66rem;color:var(--gold2);}
-    .tum-stone-empty{flex:1;font-size:.68rem;color:var(--t4);}
-
-    /* ── TIPOS GRID ── */
-    .tum-tipos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
-    .tum-tipo-card{background:var(--s3);border:1.5px solid var(--bd2);border-radius:12px;padding:10px;cursor:pointer;transition:border-color .15s;}
-    .tum-tipo-card.on{border-color:var(--gold);background:rgba(201,168,76,.07);}
-    .tum-tipo-icon{font-size:1.2rem;margin-bottom:4px;}
-    .tum-tipo-label{font-size:.68rem;font-weight:700;color:var(--t2);margin-bottom:2px;}
-    .tum-tipo-desc{font-size:.56rem;color:var(--t4);line-height:1.4;}
-
-    /* ── PECA LIST ── */
-    .tum-peca-list{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
-    .tum-peca-row{background:var(--s3);border:1px solid var(--bd2);border-radius:10px;overflow:hidden;}
-    .tum-peca-off{opacity:.55;}
-    .tum-peca-header{display:flex;align-items:center;gap:10px;padding:10px 12px;}
-    .tum-peca-label{flex:1;font-size:.72rem;font-weight:600;color:var(--t2);}
-    .tum-peca-val{flex-shrink:0;}
-    .tum-peca-detail{padding:10px 12px;background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.05);}
-
-    /* ── TOGGLE ── */
-    .tum-tog{position:relative;display:inline-block;width:34px;height:20px;flex-shrink:0;}
-    .tum-tog input{opacity:0;width:0;height:0;}
-    .tum-tog-slider{position:absolute;inset:0;background:var(--s4);border-radius:20px;transition:.2s;}
-    .tum-tog-slider:before{content:"";position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
-    .tum-tog input:checked+.tum-tog-slider{background:var(--gold);}
-    .tum-tog input:checked+.tum-tog-slider:before{transform:translateX(14px);}
-
-    /* ── MISC ── */
-    .tum-sec{padding:14px 15px;}
-    .tum-sec-lbl{font-size:.56rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px;}
-    .tum-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-    .tum-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
-    .tum-f{display:flex;flex-direction:column;gap:4px;}
-    .tum-lbl{font-size:.56rem;letter-spacing:.5px;text-transform:uppercase;color:var(--t4);}
-    .tum-in{background:var(--s3);border:1px solid var(--bd2);border-radius:8px;padding:9px 10px;color:var(--tx);font-family:Outfit,sans-serif;font-size:.82rem;outline:none;width:100%;box-sizing:border-box;}
-    .tum-obs{width:100%;background:var(--s3);border:1px solid var(--bd2);border-radius:10px;padding:10px 12px;color:var(--tx);font-family:Outfit,sans-serif;font-size:.78rem;outline:none;resize:vertical;box-sizing:border-box;}
-    .tum-nav-row{display:flex;gap:8px;margin-top:16px;}
-    .tum-action-btns{display:flex;gap:8px;margin-top:16px;}
-
     /* ── HERO ── */
-    .tum-hero{background:linear-gradient(135deg,var(--s2),var(--s1));border-bottom:1px solid var(--bd);padding:14px 16px 12px;}
-    .tum-hero-row{display:flex;justify-content:space-between;align-items:flex-start;}
-    .tum-hero-title{font-size:.72rem;font-weight:700;color:var(--t2);}
-    .tum-hero-sub{font-size:.62rem;color:var(--t3);margin-top:2px;}
-    .tum-hero-val{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--gold2);}
+    .tum-hero {
+      background: linear-gradient(135deg, var(--s2,#101012), rgba(201,168,76,.05));
+      border-bottom: 1px solid var(--bd,rgba(255,255,255,.06));
+      padding: 16px 20px 14px;
+    }
+    .tum-hero-row { display:flex; justify-content:space-between; align-items:flex-start; }
+    .tum-hero-title { font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold,#c9a84c); font-weight:700; margin-bottom:3px; }
+    .tum-hero-sub   { font-size:.72rem; color:var(--t3,#787068); }
+    .tum-hero-val   { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:700; color:var(--gold2,#e8c96a); line-height:1.1; }
 
     /* ── TABS ── */
-    .tum-tabs{display:flex;gap:0;overflow-x:auto;background:var(--s1);border-bottom:1px solid var(--bd);scrollbar-width:none;}
-    .tum-tabs::-webkit-scrollbar{display:none;}
-    .tum-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 12px;cursor:pointer;white-space:nowrap;font-size:.52rem;color:var(--t4);border-bottom:2px solid transparent;transition:color .15s;}
-    .tum-tab.on{color:var(--gold);border-bottom-color:var(--gold);}
-    .tum-tab span:first-child{font-size:.9rem;}
+    .tum-tabs {
+      display:flex; gap:2px; overflow-x:auto;
+      background:var(--s2,#101012); border-bottom:1px solid var(--bd,rgba(255,255,255,.06));
+      padding:0 16px;
+    }
+    .tum-tab {
+      padding:10px 14px; font-size:.7rem; font-weight:500;
+      color:var(--t3,#787068); border:none; background:none;
+      border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap;
+      transition:all .15s;
+    }
+    .tum-tab:hover { color:var(--t2,#b0ab9e); }
+    .tum-tab.on    { color:var(--gold,#c9a84c); border-bottom-color:var(--gold,#c9a84c); }
+
+    /* ── CARDS ── */
+    .tum-card {
+      background:var(--s2,#101012); border:1px solid var(--bd,rgba(255,255,255,.06));
+      border-radius:14px; overflow:hidden; margin:12px 16px;
+    }
+    .tum-card-hd {
+      padding:12px 16px; border-bottom:1px solid var(--bd,rgba(255,255,255,.06));
+    }
+    .tum-card-title {
+      font-family:'DM Mono',monospace; font-size:.58rem; letter-spacing:.18em;
+      text-transform:uppercase; color:var(--gold,#c9a84c); font-weight:500;
+    }
+    .tum-card-body { padding:14px 16px; }
+
+    /* ── GRIDS ── */
+    .tum-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+    .tum-grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px; }
+    @media(max-width:480px) {
+      .tum-grid3 { grid-template-columns:1fr 1fr; }
+    }
+
+    /* ── FORM FIELDS ── */
+    .tum-f { display:flex; flex-direction:column; gap:3px; }
+    .tum-f label {
+      font-size:.58rem; color:var(--t3,#787068); text-transform:uppercase;
+      letter-spacing:.06em; font-weight:500;
+    }
+    .tum-f input, .tum-f select, .tum-f textarea {
+      background:var(--s3,#161618); border:1px solid var(--bd2,rgba(255,255,255,.10));
+      border-radius:8px; padding:9px 12px; color:var(--tx,#edeae2);
+      font-family:'Outfit',sans-serif; font-size:.84rem; outline:none; width:100%;
+      transition:border-color .15s;
+    }
+    .tum-f input:focus, .tum-f select:focus, .tum-f textarea:focus { border-color:var(--gold,#c9a84c); }
+    .tum-f select option { background:#1a1a1e; }
+    .tum-hint { font-size:.57rem; color:var(--t4,#484440); margin-top:1px; }
+    .tum-obs  { resize:vertical; min-height:70px; }
+
+    /* ── PRESETS ── */
+    .tum-presets { display:flex; flex-wrap:wrap; gap:7px; }
+    .tum-preset {
+      padding:6px 13px; border-radius:20px;
+      border:1px solid var(--bd2,rgba(255,255,255,.10));
+      background:var(--s3,#161618); font-size:.72rem; color:var(--t2,#b0ab9e);
+      cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:6px;
+    }
+    .tum-preset:hover  { border-color:var(--gold,#c9a84c); color:var(--gold,#c9a84c); }
+    .tum-preset.on     { border-color:var(--gold,#c9a84c); background:rgba(201,168,76,.08); color:var(--gold2,#e8c96a); font-weight:600; }
+    .tum-preset-badge  { font-size:.55rem; opacity:.65; }
+
+    /* ── MATERIAL ── */
+    .tum-mat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:7px; margin-bottom:10px; }
+    .tum-mat {
+      padding:10px 10px; border-radius:10px;
+      border:1px solid var(--bd2,rgba(255,255,255,.10));
+      background:var(--s3,#161618); cursor:pointer; text-align:center; transition:all .15s;
+    }
+    .tum-mat:hover { border-color:var(--gold,#c9a84c); }
+    .tum-mat.on    { border-color:var(--gold,#c9a84c); background:rgba(201,168,76,.08); }
+    .tum-mat-nm    { font-size:.72rem; font-weight:700; color:var(--t2,#b0ab9e); margin-bottom:2px; }
+    .tum-mat-cat   { font-size:.56rem; color:var(--t4,#484440); margin-bottom:4px; }
+    .tum-mat-pr    { font-size:.68rem; font-weight:700; color:var(--gold,#c9a84c); }
+
+    /* ── ACABAMENTOS ── */
+    .tum-acab-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:7px; margin-bottom:10px; }
+    .tum-acab {
+      padding:9px 8px; border-radius:10px;
+      border:1px solid var(--bd2,rgba(255,255,255,.10));
+      background:var(--s3,#161618); cursor:pointer; text-align:center; transition:all .15s;
+    }
+    .tum-acab:hover { border-color:var(--gold,#c9a84c); }
+    .tum-acab.on    { border-color:var(--gold,#c9a84c); background:rgba(201,168,76,.09); }
+    .tum-acab-nm    { font-size:.68rem; font-weight:700; color:var(--t2,#b0ab9e); margin-bottom:2px; }
+    .tum-acab-pr    { font-size:.62rem; color:var(--gold,#c9a84c); margin-bottom:3px; }
+    .tum-acab-desc  { font-size:.54rem; color:var(--t4,#484440); line-height:1.3; }
+
+    /* ── TOGGLES ── */
+    .tum-tog-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:10px 0; border-bottom:1px solid var(--bd,rgba(255,255,255,.06));
+    }
+    .tum-tog-row:last-child { border-bottom:none; }
+    .tum-tog-info { flex:1; }
+    .tum-tog-nm   { font-size:.78rem; color:var(--t2,#b0ab9e); }
+    .tum-tog-sub  { font-size:.62rem; color:var(--t4,#484440); margin-top:1px; }
+    .tum-tog {
+      width:40px; height:22px; border-radius:11px;
+      background:var(--s3,#161618); border:1px solid var(--bd2,rgba(255,255,255,.10));
+      position:relative; cursor:pointer; transition:background .2s; flex-shrink:0;
+    }
+    .tum-tog::after {
+      content:''; position:absolute;
+      left:3px; top:3px; width:14px; height:14px;
+      border-radius:50%; background:var(--t4,#484440);
+      transition:left .2s, background .2s;
+    }
+    .tum-tog.on { background:rgba(201,168,76,.18); border-color:var(--gold,#c9a84c); }
+    .tum-tog.on::after { left:21px; background:var(--gold,#c9a84c); }
+
+    /* ── INFO / ALERTA ── */
+    .tum-info-box {
+      background:rgba(201,168,76,.06); border:1px solid rgba(201,168,76,.18);
+      border-radius:8px; padding:10px 12px; font-size:.74rem; color:var(--t2,#b0ab9e);
+      line-height:1.5; margin-bottom:12px;
+    }
+    .tum-info-box strong { color:var(--gold2,#e8c96a); }
+    .tum-alerta {
+      background:rgba(192,90,74,.08); border:1px solid rgba(192,90,74,.25);
+      border-radius:8px; padding:10px 12px; font-size:.74rem; color:#e07060;
+      line-height:1.5; margin-bottom:10px;
+    }
+
+    /* ── RESULTADO ── */
+    .tum-res-grid {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:8px; margin:12px 16px;
+    }
+    @media(max-width:480px){ .tum-res-grid{grid-template-columns:1fr 1fr;} }
+    .tum-res-card {
+      background:var(--s3,#161618); border:1px solid var(--bd,rgba(255,255,255,.06));
+      border-radius:12px; padding:11px 12px;
+    }
+    .tum-res-lbl { font-size:.54rem; color:var(--t4,#484440); text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px; }
+    .tum-res-val { font-size:.92rem; font-weight:700; color:var(--tx,#edeae2); line-height:1.2; }
+    .tum-res-gold{ color:var(--gold2,#e8c96a)!important; }
+    .tum-res-grn { color:#5a9a6a!important; }
+    .tum-res-sub { font-size:.57rem; color:var(--t4,#484440); margin-top:2px; }
+
+    /* ── DETALHAMENTO ── */
+    .tum-det-line {
+      display:flex; justify-content:space-between; align-items:baseline;
+      padding:6px 0; border-bottom:1px solid var(--bd,rgba(255,255,255,.06));
+      font-size:.78rem;
+    }
+    .tum-det-line:last-child { border-bottom:none; }
+    .tum-det-k   { color:var(--t2,#b0ab9e); }
+    .tum-det-v   { font-weight:600; color:var(--tx,#edeae2); }
+    .tum-det-bold .tum-det-k { color:var(--t3,#787068); font-weight:700; font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; }
+    .tum-det-bold .tum-det-v { font-size:.92rem; }
+    .tum-dim { font-size:.65rem; color:var(--t4,#484440); margin-left:4px; }
+
+    /* ── TOTAL ── */
+    .tum-total-box {
+      background:var(--s3,#161618); border:1px solid rgba(201,168,76,.25);
+      border-radius:14px; padding:16px; margin:12px 16px;
+    }
+    .tum-total-linha {
+      display:flex; justify-content:space-between; padding:5px 0;
+      font-size:.78rem; color:var(--t3,#787068); border-bottom:1px solid var(--bd,rgba(255,255,255,.06));
+    }
+    .tum-total-linha:last-of-type { border-bottom:none; }
+    .tum-total-main {
+      display:flex; justify-content:space-between; align-items:baseline;
+      padding:12px 0 8px; font-size:.75rem; color:var(--t3,#787068);
+    }
+    .tum-total-val {
+      font-family:'Cormorant Garamond',serif;
+      font-size:2rem; font-weight:700; color:var(--gold2,#e8c96a); line-height:1;
+    }
+    .tum-total-parc { font-size:.72rem; color:var(--t4,#484440); margin-top:2px; }
+    .tum-prazo      { font-size:.68rem; color:var(--t3,#787068); margin-top:6px; }
+
+    /* ── AÇÕES ── */
+    .tum-acoes {
+      display:flex; gap:8px; flex-wrap:wrap;
+      margin:12px 16px 24px;
+    }
+    .tum-btn-gold {
+      padding:11px 20px; border-radius:10px; border:none;
+      background:var(--gold,#c9a84c); color:#0a0805;
+      font-family:'Outfit',sans-serif; font-size:.82rem; font-weight:700;
+      cursor:pointer; transition:all .15s;
+    }
+    .tum-btn-gold:hover { background:var(--gold2,#e8c96a); }
+    .tum-btn-gold.tum-btn-full { width:calc(100% - 32px); margin:4px 16px; display:block; text-align:center; }
+    .tum-btn-out {
+      padding:9px 16px; border-radius:10px;
+      border:1px solid var(--bd2,rgba(255,255,255,.10));
+      background:transparent; color:var(--t2,#b0ab9e);
+      font-family:'Outfit',sans-serif; font-size:.78rem;
+      cursor:pointer; transition:all .15s;
+    }
+    .tum-btn-out:hover  { border-color:var(--gold,#c9a84c); color:var(--gold,#c9a84c); }
+    .tum-btn-sm         { padding:6px 12px; font-size:.68rem; }
+
+    /* ── HISTÓRICO ── */
+    .tum-hist-card {
+      background:var(--s2,#101012); border:1px solid var(--bd,rgba(255,255,255,.06));
+      border-radius:12px; padding:13px 15px; margin-bottom:9px; cursor:pointer;
+      transition:border-color .15s;
+    }
+    .tum-hist-card:hover { border-color:rgba(201,168,76,.3); }
+    .tum-hist-row  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+    .tum-hist-cli  { font-size:.92rem; font-weight:600; color:var(--tx,#edeae2); }
+    .tum-hist-val  { font-size:.85rem; font-weight:700; color:var(--gold2,#e8c96a); }
+    .tum-hist-meta { font-size:.68rem; color:var(--t3,#787068); display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+    .tum-hist-badges { display:flex; gap:7px; }
+    .tum-badge {
+      display:inline-block; padding:2px 8px; border-radius:20px;
+      font-size:.56rem; font-weight:700; letter-spacing:.06em;
+      background:rgba(201,168,76,.1); border:1px solid rgba(201,168,76,.25); color:var(--gold,#c9a84c);
+    }
+
+    /* ── VAZIO ── */
+    .tum-empty {
+      text-align:center; padding:50px 20px;
+      color:var(--t4,#484440); font-size:.82rem; line-height:1.8;
+    }
+
+    /* ── CONFIG TAB ── */
+    .tum-cfg-sec {
+      font-size:.56rem; letter-spacing:.18em; text-transform:uppercase;
+      color:var(--gold,#c9a84c); font-weight:700; padding:4px 0 6px;
+      border-bottom:1px solid rgba(201,168,76,.15); margin-bottom:8px;
+    }
   `;
   document.head.appendChild(s);
 })();
+
+// ─────────────────────────────────────────────────────────────────────
+// INICIALIZAÇÃO AUTOMÁTICA
+// ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  _tumInitCfg();
+  _tumInjectCfgTab();
+});
