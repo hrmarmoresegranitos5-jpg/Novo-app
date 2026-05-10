@@ -442,6 +442,7 @@ function go(n){
   if(n===4)renderFin();
   if(n===5)updEmp();
   if(n===6){cfgTab=0;document.querySelectorAll('.cfgtab').forEach(function(t){t.classList.toggle('on',t.dataset.cftab==='0');});buildCfg();}
+  if(n===9 && typeof renderTum==='function'){setTimeout(function(){renderTum();},120);}
 }
 
 // ═══ DISPATCH ═══
@@ -922,6 +923,7 @@ function rmAmbiente(id){
 }
 
 function setAmbTipo(id,tipo){
+  if(tipo==='Túmulo'){go(9);return;} // Módulo dedicado pg9
   var amb=ambientes.find(function(a){return a.id==id;});
   if(!amb)return;
   amb.tipo=tipo;
