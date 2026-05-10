@@ -1077,7 +1077,8 @@ function renderAmbientes(){
       h+='<div style="font-size:.57rem;color:var(--t4);margin-top:8px;line-height:1.5;">💡 <b>Comprimento</b> = lado da piscina em cm &nbsp;·&nbsp; <b>Largura</b> = largura da borda em cm</div>';
       h+='</div>';
     }
-    // STEP 2: Selecao de Pedra
+    // STEP 2: Selecao de Pedra (oculta para Túmulo — pedra é selecionada na calculadora)
+    if(amb.tipo!=='Túmulo'){
     h+='<div style="margin:10px 0 12px;">';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">';
     h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">② Pedra</span>';
@@ -1087,7 +1088,7 @@ function renderAmbientes(){
     h+='</span></div>';
     h+=buildMatCarouselHtml(amb);
     h+='</div>';
-    // Pecas
+    // Pecas (ocultas para Túmulo — calculadas automaticamente pela calculadora)
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 7px;">Peças</div>';
     h+='<div class="amb-pecas">';
     amb.pecas.forEach(function(pc,pi){
@@ -1128,6 +1129,7 @@ function renderAmbientes(){
     h+='<button class="btn btn-o" style="font-size:.73rem;padding:8px;flex:1;" data-add-peca="'+amb.id+'">+ Peça</button>';
     h+='<button class="btn-ai-sm" data-ai-amb="'+amb.id+'">✨ Descrever</button>';
     h+='</div>';
+    } // fim if(amb.tipo!=='Túmulo')
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Serviços</div>';
     h+=buildSVHtml(amb);
     h+='</div></div>';
@@ -1223,7 +1225,7 @@ function buildSVHtml(amb){
         else if(it.u==='livre') prLabel='Valor livre';
         else if(pr) prLabel='R$'+pr;
 
-        h+='<div data-sv="'+it.k+'" data-amb="'+amb.id+'" onclick="togSV(\''+it.k+'\','+amb.id+')"'
+        h+='<div data-sv="'+it.k+'" data-amb="'+amb.id+'"'
           +' style="cursor:pointer;border-radius:11px;border:1.5px solid '+(isOn?'rgba(201,168,76,.55)':'rgba(255,255,255,.09)')+';background:'+(isOn?'rgba(201,168,76,.1)':'rgba(255,255,255,.03)')+';padding:10px 11px;transition:all .2s;display:flex;justify-content:space-between;align-items:center;gap:6px;min-height:48px;">';
         h+='<div style="flex:1;min-width:0;">';
         h+='<div style="font-size:.7rem;font-weight:'+(isOn?'700':'600')+';color:'+(isOn?'var(--gold2)':'var(--t2)')+';line-height:1.3;word-break:break-word;">'+it.l+'</div>';
