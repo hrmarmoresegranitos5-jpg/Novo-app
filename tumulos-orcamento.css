@@ -310,7 +310,7 @@
   text-align: center;
 }
 .tum-rcard-lbl { font-size: .52rem; color: var(--t4); text-transform: uppercase; letter-spacing: .5px; }
-.tum-rcard-val { font-size: .78rem; font-weight: 700; color: var(--tx); margin: 3px 0 2px; }
+.tum-rcard-val { font-size: .78rem; font-weight: 700; color: var(--t1); margin: 3px 0 2px; }
 .tum-rcard-sub { font-size: .52rem; color: var(--t4); line-height: 1.3; }
 
 /* ─── Detail lines ──────────────────────────────────────────────────── */
@@ -326,7 +326,7 @@
 .tum-dline:last-child { border-bottom: none; }
 .tum-dline-b {
   font-weight: 700;
-  color: var(--tx);
+  color: var(--t1);
   border-top: 1px solid rgba(201,168,76,.15);
   margin-top: 4px;
   padding-top: 8px;
@@ -354,7 +354,7 @@
   align-items: center;
   font-size: .78rem;
   font-weight: 700;
-  color: var(--tx);
+  color: var(--t1);
   border-top: 1px solid rgba(201,168,76,.2);
   margin-top: 8px;
   padding-top: 10px;
