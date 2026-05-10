@@ -371,6 +371,33 @@ function abrirCalculadoraTumulos() {
   _tumOpenModal();
 }
 
+// Abre a calculadora pré-preenchida com dados do ambiente do Novo-app
+function tumAbrirComAmb(ambId) {
+  // Pega dados do ambiente
+  var amb = (typeof ambientes !== 'undefined') ? ambientes.find(function(a) { return a.id === ambId; }) : null;
+  if (amb) {
+    // Pré-preenche dados do falecido/cemitério do tumExtra
+    var te = amb.tumExtra || {};
+    if (te.falecido)  TUM.q.falecido  = te.falecido;
+    if (te.cemiterio) TUM.q.cemiterio = te.cemiterio;
+    if (te.quadra)    TUM.q.quadra    = te.quadra;
+    if (te.lote)      TUM.q.lote      = te.lote;
+    // Pré-preenche pedra selecionada
+    if (amb.selMat && typeof CFG !== 'undefined') {
+      var st = (CFG.stones || []).find(function(s) { return s.id === amb.selMat; });
+      if (st) TUM.q.matId = st.id;
+    }
+    // Salva id do ambiente para sincronizar de volta ao fechar
+    TUM._ambId = ambId;
+  }
+  // Pega cliente/tel dos campos do formulário principal
+  var cliEl = document.getElementById('cli');
+  var telEl = document.getElementById('tel');
+  if (cliEl && cliEl.value) TUM.q.cli = cliEl.value;
+  if (telEl && telEl.value) TUM.q.tel = telEl.value;
+  _tumOpenModal();
+}
+
 function _tumBoot() {
   _tumInitCfg();
   _tumLoadHist();
@@ -973,6 +1000,24 @@ function tumSalvar() {
   if (typeof renderAgenda === 'function') renderAgenda();
   // Re-renderiza a aba histórico do módulo de túmulos
   if (TUM._tab === 'historico') _tumRenderTab();
+  // Sincroniza dados de volta ao ambiente do Novo-app (se aberto via tumAbrirComAmb)
+  if (TUM._ambId && typeof ambientes !== 'undefined') {
+    var ambBack = ambientes.find(function(a) { return a.id === TUM._ambId; });
+    if (ambBack) {
+      if (!ambBack.tumExtra) ambBack.tumExtra = {};
+      ambBack.tumExtra.falecido  = q.falecido  || '';
+      ambBack.tumExtra.cemiterio = q.cemiterio || '';
+      ambBack.tumExtra.quadra    = q.quadra    || '';
+      ambBack.tumExtra.lote      = q.lote      || '';
+      ambBack.tumExtra.calc_ok   = true;
+      ambBack.tumExtra.m2_total  = r.m2_total;
+      ambBack.tumExtra.prazo_dias = r.prazo_total;
+      ambBack.tumExtra.subtipo   = tipo;
+      if (typeof renderAmbientes === 'function') renderAmbientes();
+    }
+  }
+  // Fecha o modal após salvar
+  setTimeout(function() { closeTumOrcModal(); }, 1200);
 }
 
 // ─────────────────────────────────────────────────────────────────────
