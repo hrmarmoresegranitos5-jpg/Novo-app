@@ -20,12 +20,6 @@ var DB={
   sv:function(){localStorage.setItem('hr_q',JSON.stringify(this.q));localStorage.setItem('hr_j',JSON.stringify(this.j));localStorage.setItem('hr_t',JSON.stringify(this.t));if(SYNC.on)SYNC.push();}
 };
 var CFG=JSON.parse(localStorage.getItem('hr_cfg')||'null');
-// ── Defaults módulo Túmulo (inicializa se ausente) ──
-if(!CFG)CFG={};
-if(!CFG.tumulos)CFG.tumulos={};
-if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
-if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
-if(typeof CFG.tumulos.margem==='undefined')CFG.tumulos.margem=CFG.margem||35;
 
 // ═══ SYNC (Firebase) ═══
 var SYNC={
@@ -213,6 +207,11 @@ function initCFG(){
   CFG.lav.forEach(function(c){if(CUBA_IMGS[c.id])c.photo=CUBA_IMGS[c.id];});
   // Garantir que ac existe (usuários com cfg antiga)
   if(!CFG.ac)CFG.ac=JSON.parse(JSON.stringify(DEF_ACESS));
+  // ── Módulo Túmulo: garantir preços configurados ──
+  if(!CFG.tumulos)CFG.tumulos={};
+  if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
+  if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
+  if(typeof CFG.tumulos.margem==='undefined')CFG.tumulos.margem=CFG.margem||35;
   svCFG();
 }
 function syncSVDefsFromList(){
@@ -2878,12 +2877,8 @@ function buildCfg(){
   h+='<div style="padding:16px 17px 32px;"><button onclick="svCFG();toast(\'✓ Configurações salvas!\');syncSVDefsFromList();buildCatalog();renderAmbientes();" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold3));border:none;border-radius:12px;font-family:Outfit,sans-serif;font-size:.88rem;font-weight:900;color:#000;cursor:pointer;">✓ Salvar Configurações</button></div>';
     }else if(cfgTab===7){
     // MÓDULO TÚMULO — preços civis e mão de obra
-    if(!CFG.tumulos)CFG.tumulos={};
-    if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
-    if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
-    if(typeof CFG.tumulos.margem==='undefined')CFG.tumulos.margem=35;
-    var ci=CFG.tumulos.civil,mo=CFG.tumulos.mob;
-    function _tcInp(lbl,cat,key,val){
+    var ci=CFG.tumulos.civil||{},mo=CFG.tumulos.mob||{};
+    var _tcInp=function(lbl,cat,key,val){
       return '<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">'+lbl+'</label>'+
         '<input class="cfginp" type="number" value="'+val+'" min="0" step="0.5" style="text-align:right;" '+
         'onchange="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();" oninput="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();"></div>';
