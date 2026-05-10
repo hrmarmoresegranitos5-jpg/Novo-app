@@ -1025,36 +1025,11 @@ function renderAmbientes(){
       });
       h+='</select></div>';
       h+='</div>';
-      // ── CALCULADORA INLINE ─────────────────────────────────────────
-      var _isCalcOpen=(_tcInlineOpenId===amb.id);
-      var _hasCal=amb.tumExtra&&amb.tumExtra.calc_ok;
-      h+='<div style="margin-top:12px;">';
-      if(_hasCal&&!_isCalcOpen){
-        // Resumo compacto + botão Editar
-        var te2=amb.tumExtra;
-        h+='<div style="background:linear-gradient(135deg,rgba(40,180,100,.07),rgba(40,180,100,.03));border:1px solid rgba(40,180,100,.22);border-radius:11px;padding:10px 12px;">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">';
-        h+='<div style="font-size:.55rem;font-weight:700;color:#4dc87a;text-transform:uppercase;letter-spacing:.7px;">✅ Calculado</div>';
-        h+='<button onclick="inlineTcToggle('+amb.id+')" style="font-size:.6rem;color:var(--gold2);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:7px;padding:3px 8px;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600;">✏️ Editar</button>';
-        h+='</div>';
-        h+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">';
-        var statInl=function(ic,lbl,val){return '<div style="background:rgba(0,0,0,.2);border-radius:8px;padding:7px 4px;text-align:center;"><div style="font-size:.75rem;">'+ic+'</div><div style="font-size:.62rem;font-weight:700;color:var(--t1);margin:2px 0 1px;">'+val+'</div><div style="font-size:.5rem;color:var(--t4);">'+lbl+'</div></div>';};
-        h+=statInl('📐','m²',te2.m2_total);
-        h+=statInl('⚖️','kg',te2.peso_kg);
-        h+=statInl('📅','dias',te2.prazo_dias);
-        if(te2.altura_cm)h+=statInl('📏','alt',te2.altura_cm+'cm');
-        h+='</div>';
-        if(te2.subtipo)h+='<div style="font-size:.62rem;color:var(--t4);margin-top:6px;text-align:center;">'+escH(te2.subtipo)+'</div>';
-        h+='</div>';
-      } else if(_isCalcOpen){
-        // Painel expandido inline
-        var _mat2=amb.selMat?CFG.stones.find(function(s){return s.id===amb.selMat;}):null;
-        var _matNm2=_mat2?_mat2.nm+' <span style="color:var(--gold2);">R$ '+_mat2.pr+'/m²</span>':'<span style="color:var(--red);">⚠️ Selecione a pedra no ambiente primeiro</span>';
-        h+=_tcBuildInlineHtml(amb.id,_matNm2);
-      } else {
-        // Botão de abertura
-        h+='<button onclick="inlineTcToggle('+amb.id+')" style="width:100%;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.4);border-radius:11px;padding:12px 14px;color:var(--gold2);font-size:.8rem;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .2s;" onmouseover="this.style.background=\'linear-gradient(135deg,rgba(201,168,76,.22),rgba(201,168,76,.12))\'" onmouseout="this.style.background=\'linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.08))\'">🧮 Calculadora de Túmulo</button>';
-      }
+      // ── CALCULADORA DE TÚMULO — sempre visível inline ──────────────
+      var _mat2=amb.selMat?CFG.stones.find(function(s){return s.id===amb.selMat;}):null;
+      var _matNm2=_mat2?_mat2.nm+' <span style="color:var(--gold2);">R$ '+_mat2.pr+'/m²</span>':'<span style="color:var(--red);">⚠️ Selecione a pedra no ambiente primeiro</span>';
+      h+='<div style="margin-top:12px;" data-tum-calc="'+amb.id+'" onclick="_tcSetAmb('+amb.id+')">';
+      h+=_tcBuildInlineHtml(amb.id,_matNm2);
       h+='</div>';
       h+='</div>';
     }
@@ -1144,13 +1119,15 @@ function renderAmbientes(){
     h+='</div></div>';
   });
   container.innerHTML=h;
-  // Restaurar estado do painel inline se estiver aberto
-  if(_tcInlineOpenId){
-    var _p=TC_PRESETS.find(function(x){return x.id===_tcSEL.preset;});
-    if(_p)_tcFillInputs(_p);
-    _tcRefresh();
-    tc_calcular();
-  }
+  // Inicializar calculadora(s) de túmulo inline
+  ambientes.forEach(function(a){
+    if(a.tipo!=='Túmulo')return;
+    _tumCalcAmbId=a.id;
+    if(a.tumExtra&&a.tumExtra._tcSEL){_tcSEL=JSON.parse(JSON.stringify(a.tumExtra._tcSEL));}
+    var _pi=TC_PRESETS.find(function(x){return x.id===_tcSEL.preset;});
+    if(_pi)_tcFillInputs(_pi);
+    _tcRefresh();tc_calcular();
+  });
   }catch(e2){console.error('renderAmbientes:',e2);toast('Erro: '+e2.message);}
 }
 // ─── BORDA PISCINA: cálculo automático de ML por lados ───────────
@@ -4575,12 +4552,9 @@ function _tcBuildInlineHtml(ambId, matNm){
   h+='<div style="background:linear-gradient(160deg,#0f0d0a 0%,#181410 100%);border:1px solid rgba(201,168,76,.22);border-radius:16px;overflow:hidden;margin-top:4px;">';
 
   // Header compacto
-  h+='<div style="background:linear-gradient(135deg,rgba(201,168,76,.13),rgba(201,168,76,.04));border-bottom:1px solid rgba(201,168,76,.14);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;">';
-  h+='<div style="display:flex;align-items:center;gap:8px;">';
+  h+='<div style="background:linear-gradient(135deg,rgba(201,168,76,.13),rgba(201,168,76,.04));border-bottom:1px solid rgba(201,168,76,.14);padding:12px 16px;display:flex;align-items:center;gap:8px;">';
   h+='<span>🏛️</span>';
-  h+='<span style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1rem;font-weight:700;color:var(--gold2);">Calculadora de Túmulo</span>';
-  h+='</div>';
-  h+='<button onclick="inlineTcToggle('+ambId+')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:50%;width:32px;height:32px;color:var(--t3);font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;" onmouseover="this.style.background=\'rgba(255,255,255,.14)\'" onmouseout="this.style.background=\'rgba(255,255,255,.07)\'">✕</button>';
+  h+='<span style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:.95rem;font-weight:700;color:var(--gold2);">Calculadora de Túmulo</span>';
   h+='</div>';
 
   // Banner material
@@ -4674,7 +4648,18 @@ function _tcBuildInlineHtml(ambId, matNm){
   return h;
 }
 
+function _tcSetAmb(ambId){
+  if(_tumCalcAmbId===ambId)return;
+  _tumCalcAmbId=ambId;
+  var amb=ambientes.find(function(a){return a.id==ambId;});
+  if(amb&&amb.tumExtra&&amb.tumExtra._tcSEL){_tcSEL=JSON.parse(JSON.stringify(amb.tumExtra._tcSEL));}
+  var _pi=TC_PRESETS.find(function(x){return x.id===_tcSEL.preset;});
+  if(_pi)_tcFillInputs(_pi);
+  _tcRefresh();tc_calcular();
+}
+
 function inlineTcToggle(ambId){
+
   _tcInlineOpenId=(_tcInlineOpenId===ambId)?null:ambId;
   if(_tcInlineOpenId){
     _tumCalcAmbId=ambId;
