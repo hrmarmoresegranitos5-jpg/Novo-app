@@ -207,7 +207,6 @@ function initCFG(){
   CFG.lav.forEach(function(c){if(CUBA_IMGS[c.id])c.photo=CUBA_IMGS[c.id];});
   // Garantir que ac existe (usuários com cfg antiga)
   if(!CFG.ac)CFG.ac=JSON.parse(JSON.stringify(DEF_ACESS));
-  // Modulo Tumulo: garantir precos configurados
   if(!CFG.tumulos)CFG.tumulos={};
   if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
   if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
@@ -617,44 +616,42 @@ SV_DEFS.Tumulo=[
     {k:'tum_base',   l:'Base / Plataforma',        u:'sf'},
     {k:'tum_det',    l:'Detalhe Superior',         u:'sf'},
     {k:'tum_sainha', l:'Sainha Frontal',           u:'sf'},
-    {k:'tum_gav1',   l:'Frente de Gaveta — 1ª',   u:'sf'},
-    {k:'tum_gav2',   l:'Frente de Gaveta — 2ª',   u:'sf'},
-    {k:'tum_gav3',   l:'Frente de Gaveta — 3ª',   u:'sf'}
+    {k:'tum_gav1',   l:'Gaveta 1ª',               u:'sf'},
+    {k:'tum_gav2',   l:'Gaveta 2ª',               u:'sf'},
+    {k:'tum_gav3',   l:'Gaveta 3ª',               u:'sf'}
   ]},
   {g:'📐 Acabamentos (ml)',its:[
     {k:'tum_mol',    l:'Moldura decorativa',       u:'ml'},
     {k:'tum_ping',   l:'Pingadeira',               u:'ml'},
     {k:'tum_bisel',  l:'Borda Biselada',           u:'ml'}
   ]},
-  {g:'🪦 Lápide / Foto / Cruz',its:[
+  {g:'🪦 Lápide & Extras',its:[
     {k:'tum_lapide', l:'Lápide de Granito',        u:'un', fx:1},
     {k:'tum_plaq',   l:'Plaquinha Gravada',        u:'un', fx:1},
     {k:'tum_foto',   l:'Foto em Porcelana',        u:'un', fx:1},
     {k:'tum_cruz',   l:'Cruz em Granito',          u:'un', fx:1},
-    {k:'tum_pol',    l:'Polimento Extra',           u:'un', fx:1},
+    {k:'tum_pol',    l:'Polimento Extra',          u:'un', fx:1},
     {k:'tum_rec',    l:'Recorte / Furo',           u:'un', fx:0}
   ]},
   {g:'🔨 Mão de Obra',its:[
-    {k:'tum_mont',   l:'Montagem / Instalação',    u:'un', fx:1},
+    {k:'tum_mont',   l:'Instalação Padrão',        u:'un', fx:1},
     {k:'tum_montc',  l:'Instalação Complexa',      u:'un', fx:1}
   ]},
-  {g:'🧱 Construção & Materiais',its:[
-    {k:'tum_fund',   l:'Fundação',                 u:'livre'},
+  {g:'🧱 Obra Civil',its:[
     {k:'tum_lev',    l:'Levantamento / Alvenaria', u:'livre'},
+    {k:'tum_conc',   l:'Concreto / Estrutura',     u:'livre'},
+    {k:'tum_fund',   l:'Fundação',                 u:'livre'},
     {k:'tum_reb',    l:'Reboco / Chapisco',        u:'livre'},
-    {k:'tum_conc',   l:'Concreto Armado',          u:'livre'},
-    {k:'tum_cpiso',  l:'Contra-piso',              u:'livre'},
-    {k:'tum_acob',   l:'Acabamento Final Obra',    u:'livre'},
+    {k:'tum_ferro',  l:'Ferro / Tela',             u:'livre'},
+    {k:'tum_tijolo', l:'Blocos / Tijolos',         u:'livre'},
     {k:'tum_cim',    l:'Cimento / Areia',          u:'livre'},
     {k:'tum_cola',   l:'Cola p/ Granito',          u:'livre'},
     {k:'tum_rej',    l:'Rejunte',                  u:'livre'},
-    {k:'tum_ferro',  l:'Ferro / Tela',             u:'livre'},
-    {k:'tum_tijolo', l:'Tijolos / Blocos',         u:'livre'},
-    {k:'tum_frete',  l:'Frete / Entrega Material', u:'livre'}
+    {k:'tum_frete',  l:'Frete / Material',         u:'livre'}
   ]},
-  {g:'Deslocamento',its:[
-    {k:'desl_cid',   l:'Na cidade',                u:'livre'},
-    {k:'desl_for',   l:'Fora da cidade',           u:'km', fx:0}
+  {g:'🚗 Deslocamento',its:[
+    {k:'desl_cid', l:'Na cidade',      u:'livre'},
+    {k:'desl_for', l:'Fora da cidade', u:'km', fx:0}
   ]}
 ];
 SV_DEFS['Túmulo'] = SV_DEFS.Tumulo;
@@ -1165,7 +1162,16 @@ function buildSVHtml(amb){
   var g=SV_DEFS[amb.tipo]||SV_DEFS.Cozinha;
   var sv=amb.svState||{};
   var h='';
+  var isTumCalc=amb.tipo==='Túmulo'&&amb.tumExtra&&amb.tumExtra.calc_ok;
   g.forEach(function(grp){
+    if(isTumCalc&&grp.g==='🪨 Peças de Pedra (m²)'){
+      h+='<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;">';
+      h+='<span style="font-size:1rem;">✅</span>';
+      h+='<div><div style="font-size:.75rem;color:var(--gold2);font-weight:600;">Peças calculadas automaticamente</div>';
+      h+='<div style="font-size:.65rem;color:var(--t4);margin-top:1px;">'+amb.tumExtra.m2_total+'m² · '+amb.tumExtra.peso_kg+'kg · '+amb.tumExtra.prazo_dias+' dias</div>';
+      h+='</div></div>';
+      return;
+    }
     h+='<div class="svblk"><div class="svhd">'+grp.g+'</div>';
     grp.its.forEach(function(it){
       var pr=getPr(it.k);
