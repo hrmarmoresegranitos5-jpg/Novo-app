@@ -142,10 +142,20 @@ var TUM = {
 function tumInit()  { _tumBoot(); }
 function renderTum() { _tumBoot(); }
 
+// ─── Usa o catálogo principal de pedras (CFG.stones) ─────────────────
+function _tumPedras() {
+  if (typeof CFG !== 'undefined' && CFG.stones && CFG.stones.length) {
+    return CFG.stones.map(function(s) {
+      return { id: s.id, nm: s.nm, cat: s.cat || s.fin || '', pr: s.pr, peso: s.peso || 76 };
+    });
+  }
+  return _tumCfg().pedras;
+}
+
 function _tumBoot() {
   _tumInitCfg();
   _tumLoadHist();
-  if (!TUM.q.matId) TUM.q.matId = _tumCfg().pedras[0].id;
+  if (!TUM.q.matId) TUM.q.matId = _tumPedras()[0].id;
   _tumRecalc();
   _tumRender();
   _tumInjectCfgTab();
@@ -203,7 +213,8 @@ function _tumCalcFull() {
   var At    = At_cm / 100;
   var A     = Ae + (N * 0.45) + At;
 
-  var mat  = cfg.pedras.find(function(x){return x.id===q.matId;}) || cfg.pedras[0];
+  var _pedras = _tumPedras();
+  var mat  = _pedras.find(function(x){return x.id===q.matId;}) || _pedras[0];
   var acab = TUM_ACAB.find(function(x){return x.id===q.acabId;}) || TUM_ACAB[0];
 
   // ── 1. PEÇAS DE PEDRA ────────────────────────────────────────────
@@ -547,7 +558,8 @@ function _tabPedras(r) {
 
   // Material
   var mh = '<div class="tum-mat-grid">';
-  cfg.pedras.forEach(function(p) {
+  var _pedras = _tumPedras();
+  _pedras.forEach(function(p) {
     var on = p.id === q.matId;
     mh += '<button class="tum-mat'+(on?' on':'')+'" onclick="tumSelMat(\''+p.id+'\')">' +
       '<div class="tum-mat-nm">'+p.nm+'</div>' +
@@ -556,7 +568,7 @@ function _tabPedras(r) {
       '</button>';
   });
   mh += '</div>';
-  var matSel = cfg.pedras.find(function(x){return x.id===q.matId;});
+  var matSel = _pedras.find(function(x){return x.id===q.matId;});
   if (matSel && r) {
     var eMult = {2:'1,00×',3:'1,35×',4:'1,70×',5:'2,10×'};
     mh += '<div class="tum-info-box">📊 '+matSel.nm+' · esp. '+q.E+'cm (mult. '+(eMult[q.E]||'1,35×')+') → R$ '+matSel.pr+' × '+eMult[q.E]+' = <strong>R$ '+_r2(matSel.pr*(r.espM||1.35)).toFixed(2)+'/m²</strong></div>';
@@ -842,7 +854,7 @@ function tumSalvar() {
   if (!r)     { if(typeof toast==='function') toast('⚠ Calcule o orçamento primeiro'); return; }
 
   var cfg     = _tumCfg();
-  var matNm   = (cfg.pedras.find(function(x){return x.id===q.matId;})||{}).nm || 'Pedra';
+  var matNm   = (_tumPedras().find(function(x){return x.id===q.matId;})||{}).nm || 'Pedra';
   var preset  = TUM_PRESETS.find(function(x){return x.id===q.preset;});
   var tipo    = 'Túmulo — '+(preset?preset.nm:q.preset)+(q.N>0?' '+q.N+'G':'');
 
@@ -885,7 +897,49 @@ function tumSalvar() {
     if (typeof DB.sv === 'function') DB.sv();
   }
 
-  if (typeof toast === 'function') toast('✅ Orçamento salvo!');
+  // ── Salvar na Agenda ────────────────────────────────────────────
+  if (typeof DB !== 'undefined' && DB.j && typeof lastEnd === 'function' && typeof addD === 'function') {
+    var startAg = lastEnd() || (typeof td === 'function' ? td() : new Date().toLocaleDateString('pt-BR'));
+    var diasEst = Math.ceil((r.prazo_dias || 13));
+    var endAg   = addD(startAg, diasEst);
+    var obsAg   = tipo + ' — ' + matNm;
+    if (q.falecido)  obsAg += ' | Falecido: ' + q.falecido;
+    if (q.cemiterio) obsAg += ' | Cemitério: ' + q.cemiterio;
+    if (q.obs)       obsAg += ' | ' + q.obs;
+    var job = {
+      id:       rec.id + 1,
+      cli:      q.cli,
+      desc:     obsAg,
+      material: matNm,
+      tipo:     tipo,
+      start:    startAg,
+      end:      endAg,
+      value:    r.valor_vista,
+      pago:     0,
+      obs:      q.cemiterio ? ('Cemitério: ' + q.cemiterio + (q.quadra ? ' Q' + q.quadra : '') + (q.lote ? ' L' + q.lote : '')) : '',
+      done:     false,
+      status:   'agendado'
+    };
+    DB.j.unshift(job);
+    if (typeof DB.sv === 'function') DB.sv();
+    if (typeof updUrgDot === 'function') updUrgDot();
+  }
+
+  // ── Lançar A Receber nas Finanças ───────────────────────────────
+  if (typeof DB !== 'undefined' && DB.t && typeof saveFin === 'undefined') {
+    var hoje = new Date().toISOString().split('T')[0];
+    DB.t.unshift({
+      id:   rec.id + 2,
+      tp:   'pend',
+      desc: 'Túmulo — ' + q.cli + (q.falecido ? ' (' + q.falecido + ')' : ''),
+      val:  r.valor_vista,
+      dt:   hoje,
+      date: hoje
+    });
+    if (typeof DB.sv === 'function') DB.sv();
+  }
+
+  if (typeof toast === 'function') toast('✅ Salvo na Agenda e Finanças!');
 }
 
 function tumNovo() {
@@ -908,7 +962,7 @@ function tumCopiarWA() {
   var F  = function(v){ return typeof fm==='function'?fm(v):v.toFixed(2); };
   var cfg = _tumCfg();
   var emp = (typeof CFG !== 'undefined' && CFG.emp) ? CFG.emp : { nome:'HR Mármores', tel:'' };
-  var matNm = (cfg.pedras.find(function(x){return x.id===q.matId;})||{}).nm||'';
+  var matNm = (_tumPedras().find(function(x){return x.id===q.matId;})||{}).nm||'';
 
   var txt = emp.nome+'\nORÇAMENTO DE TÚMULO\n';
   txt += '─────────────────────\n';
