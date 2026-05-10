@@ -1,96 +1,80 @@
 // ═══════════════════════════════════════════════════════
-// HR Mármores e Granitos — Service Worker
+// HR Mármores e Granitos — Service Worker v16
 // ═══════════════════════════════════════════════════════
 
 var CACHE_VERSION = 'hr-app-v16';
 
-// Arquivos do app shell — cacheados para funcionar offline
 var APP_SHELL = [
   '/Novo-app/index.html',
   '/Novo-app/styles.css',
   '/Novo-app/manifest.json',
   '/Novo-app/icon-192.png',
   '/Novo-app/icon-512.png',
-  '/Novo-app/data-cuba-imgs.js',
-  '/Novo-app/data-defaults.js',
-  '/Novo-app/app-init.js',
-  '/Novo-app/app-orcamento.js',
-  '/Novo-app/app-financas.js',
-  '/Novo-app/app-catalogos.js',
-  '/Novo-app/app-config.js',
-  '/Novo-app/app-contrato.js',
-  '/Novo-app/fechamento.js',
-  '/Novo-app/app-boletos.js',
-  '/Novo-app/app-tumulos.js',
-  '/Novo-app/app-ai-utils.js',
-  '/Novo-app/pwa.js'
+  '/Novo-app/app-core.js'
 ];
-
 // ── INSTALL: pré-cacheia o app shell ──
 self.addEventListener('install', function(e) {
+  // Força assumir controle imediatamente sem esperar
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_VERSION).then(function(cache) {
-      // Cacheia cada arquivo individualmente para não falhar tudo se um file falhar
       return Promise.all(
         APP_SHELL.map(function(url) {
           return fetch(url, { cache: 'no-store' })
             .then(function(res) {
               if (res.ok) return cache.put(url, res);
             })
-            .catch(function() {
-              // Ignora falha individual — não bloqueia instalação
-            });
+            .catch(function() {});
         })
       );
-    }).then(function() {
-      // Ativa imediatamente sem esperar abas fecharem
-      return self.skipWaiting();
     })
   );
 });
 
-// ── ACTIVATE: remove caches de versões antigas ──
+// ── ACTIVATE: apaga TODOS os caches antigos ──
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(keys) {
       return Promise.all(
         keys.map(function(key) {
+          // Apaga qualquer cache que não seja o atual
           if (key !== CACHE_VERSION) {
+            console.log('[SW] Apagando cache antigo:', key);
             return caches.delete(key);
           }
         })
       );
     }).then(function() {
+      // Assume controle de todas as abas imediatamente
       return self.clients.claim();
     }).then(function() {
-      // Avisa todas as abas que o SW novo assumiu controle
+      // Força todas as abas a recarregar para pegar versão nova
       return self.clients.matchAll({ type: 'window' }).then(function(clients) {
         clients.forEach(function(client) {
           client.postMessage({ type: 'SW_ACTIVATED', version: CACHE_VERSION });
+          // Força reload em todas as abas abertas
+          client.navigate(client.url);
         });
       });
     })
   );
 });
 
-// ── MESSAGE: força atualização imediata quando solicitado ──
+// ── MESSAGE: força atualização quando solicitado ──
 self.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
 });
 
-// ── FETCH: Network-first com fallback para cache ──
+// ── FETCH: Network-first — sempre busca da rede primeiro ──
 self.addEventListener('fetch', function(e) {
   var req = e.request;
 
-  // Só intercepta GET — deixa POST/PUT/DELETE passar direto
   if (req.method !== 'GET') return;
-
-  // Não intercepta requests de extensões do browser ou chrome-extension
   if (req.url.startsWith('chrome-extension://')) return;
 
-  // Fontes externas (Google Fonts, CDN): cache-first, sem expirar
+  // Fontes externas: cache-first
   var isExternal = req.url.startsWith('https://fonts.') ||
                    req.url.startsWith('https://cdnjs.') ||
                    req.url.indexOf('googleapis.com') > -1 ||
@@ -114,11 +98,10 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // Arquivos do app: Network-first → se rede falhar, usa cache → se cache vazio, mostra fallback
+  // App files: Network-first, sem cache de fallback para JS/HTML
   e.respondWith(
     fetch(req, { cache: 'no-store' })
       .then(function(res) {
-        // Atualiza cache com versão nova da rede
         if (res && res.ok) {
           var clone = res.clone();
           caches.open(CACHE_VERSION).then(function(c) { c.put(req, clone); });
@@ -126,11 +109,8 @@ self.addEventListener('fetch', function(e) {
         return res;
       })
       .catch(function() {
-        // Rede falhou — tenta cache
         return caches.match(req).then(function(cached) {
           if (cached) return cached;
-
-          // Sem cache: retorna página de offline amigável para navegação HTML
           var accept = req.headers.get('accept') || '';
           if (accept.indexOf('text/html') > -1) {
             return new Response(OFFLINE_HTML, {
@@ -138,46 +118,25 @@ self.addEventListener('fetch', function(e) {
               headers: { 'Content-Type': 'text/html; charset=utf-8' }
             });
           }
-
-          // Para outros recursos (JS, CSS, imagens): 503 simples
           return new Response('', { status: 503 });
         });
       })
   );
 });
 
-// ── OFFLINE FALLBACK HTML ──
+// ── OFFLINE FALLBACK ──
 var OFFLINE_HTML = '<!DOCTYPE html><html lang="pt-BR"><head>' +
   '<meta charset="UTF-8">' +
   '<meta name="viewport" content="width=device-width,initial-scale=1">' +
-  '<meta name="theme-color" content="#C9A84C">' +
-  '<meta name="apple-mobile-web-app-capable" content="yes">' +
   '<title>HR Mármores</title>' +
-  '<style>' +
-  '*{box-sizing:border-box;margin:0;padding:0}' +
-  'body{background:#070709;color:#F4EFE8;font-family:Outfit,sans-serif;' +
-  '  display:flex;align-items:center;justify-content:center;' +
-  '  min-height:100vh;padding:24px;text-align:center}' +
-  '.card{background:#0f0c00;border:1px solid rgba(201,168,76,0.3);' +
-  '  border-radius:20px;padding:40px 32px;max-width:360px;width:100%}' +
-  '.logo{font-size:2rem;font-weight:900;color:#C9A84C;margin-bottom:6px}' +
-  '.sub{font-size:.7rem;letter-spacing:3px;text-transform:uppercase;' +
-  '  color:rgba(201,168,76,0.4);margin-bottom:32px}' +
-  '.icon{font-size:3rem;margin-bottom:16px}' +
-  'h2{font-size:1.1rem;font-weight:700;margin-bottom:10px}' +
-  'p{font-size:.85rem;color:rgba(244,239,232,0.55);line-height:1.6;margin-bottom:28px}' +
-  'button{background:#C9A84C;color:#000;border:none;border-radius:12px;' +
-  '  padding:14px 28px;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;' +
-  '  font-family:Outfit,sans-serif;letter-spacing:.5px}' +
-  'button:active{opacity:.85}' +
+  '<style>body{background:#070709;color:#F4EFE8;font-family:sans-serif;' +
+  'display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center}' +
+  'h2{color:#C9A84C}button{background:#C9A84C;color:#000;border:none;' +
+  'border-radius:12px;padding:14px 28px;font-size:.9rem;font-weight:700;cursor:pointer}' +
   '</style></head><body>' +
-  '<div class="card">' +
-  '  <div class="logo">HR Mármores</div>' +
-  '  <div class="sub">Mármores · Granitos · Quartzito</div>' +
-  '  <div class="icon">📡</div>' +
-  '  <h2>Sem conexão</h2>' +
-  '  <p>O aplicativo precisa de internet para carregar.<br>' +
-  '     Verifique sua conexão e tente novamente.</p>' +
-  '  <button onclick="window.location.reload()">Tentar novamente</button>' +
-  '</div>' +
-  '</body></html>';
+  '<div><div style="font-size:3rem">📡</div>' +
+  '<h2>Sem conexão</h2>' +
+  '<p style="opacity:.6;margin:12px 0 24px">Verifique sua conexão e tente novamente.</p>' +
+  '<button onclick="window.location.reload()">Tentar novamente</button>' +
+  '</div></body></html>';
+
