@@ -3218,25 +3218,6 @@ function orcEditar(id, e){
   var q = DB.q.find(function(x){return x.id==id;});
   if(!q) return;
 
-  // Orçamento de túmulo — tentar carregar no módulo de túmulos (pg9)
-  if(q.tum){
-    var pg9 = document.getElementById('pg9');
-    if(pg9 && typeof TUM !== 'undefined' && typeof renderTum === 'function'){
-      try{
-        TUM.q = JSON.parse(JSON.stringify(q.tum));
-        go(9);
-        setTimeout(function(){ renderTum(); },100);
-        toast('✓ Túmulo carregado! Edite e recalcule.');
-      }catch(err){
-        toast('Erro ao carregar orçamento de túmulo');
-      }
-    } else {
-      // Módulo de túmulos não disponível nesta tela
-      toast('⚠️ Para editar túmulos, acesse o módulo de Túmulos');
-    }
-    return;
-  }
-
   orcRefazer(id, e);
 }
 
@@ -5124,7 +5105,7 @@ function vendasTumAplicar(pacKey) {
 
   // 6. Fecha modal e vai para o orçamento
   if (typeof closeAll === 'function') closeAll();
-  if (typeof go === 'function') go(9);
+  // pg9 removido — túmulo agora é ambiente no orçamento
 
   if (typeof toast === 'function') {
     toast('✅ Modelo ' + pac.nome + ' aplicado ao orçamento!');
