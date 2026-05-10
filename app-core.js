@@ -1025,6 +1025,16 @@ function renderAmbientes(){
       });
       h+='</select></div>';
       h+='</div>';
+      // ── SELEÇÃO DE PEDRA para Túmulo ───────────────────────────────
+      h+='<div style="margin:10px 0 4px;">';
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">';
+      h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">② Pedra</span>';
+      h+='<span id="mind-'+amb.id+'" style="font-size:.58rem;color:var(--t3);">';
+      if(ambMat) h+=ambMat.nm+' <span style="color:var(--gold2);">R$'+ambMat.pr.toLocaleString('pt-BR')+'/m²</span>';
+      else h+='<span style="color:var(--t4);">selecione uma pedra</span>';
+      h+='</span></div>';
+      h+=buildMatCarouselHtml(amb);
+      h+='</div>';
       // ── CALCULADORA DE TÚMULO — sempre visível inline ──────────────
       var _mat2=amb.selMat?CFG.stones.find(function(s){return s.id===amb.selMat;}):null;
       var _matNm2=_mat2?_mat2.nm+' <span style="color:var(--gold2);">R$ '+_mat2.pr+'/m²</span>':'<span style="color:var(--red);">⚠️ Selecione a pedra no ambiente primeiro</span>';
