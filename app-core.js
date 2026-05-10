@@ -20,6 +20,12 @@ var DB={
   sv:function(){localStorage.setItem('hr_q',JSON.stringify(this.q));localStorage.setItem('hr_j',JSON.stringify(this.j));localStorage.setItem('hr_t',JSON.stringify(this.t));if(SYNC.on)SYNC.push();}
 };
 var CFG=JSON.parse(localStorage.getItem('hr_cfg')||'null');
+// ── Defaults módulo Túmulo (inicializa se ausente) ──
+if(!CFG)CFG={};
+if(!CFG.tumulos)CFG.tumulos={};
+if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
+if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
+if(typeof CFG.tumulos.margem==='undefined')CFG.tumulos.margem=CFG.margem||35;
 
 // ═══ SYNC (Firebase) ═══
 var SYNC={
@@ -684,7 +690,8 @@ function buildSV(){
       } else if(it.u==='cuba'){
         h+='<div class="svcuba" id="sq-'+it.k+'"><span id="cdisp-'+it.k+'"></span></div>';
       } else if(it.u==='livre'){
-        h+='<div class="svxtr" id="sq-'+it.k+'"><input type="number" id="si-'+it.k+'" placeholder="valor" step="1" min="0" onclick="event.stopPropagation()"><span class="svunit">reais</span></div>';
+        var _lv=sv[it.k]&&sv[it.k].w?sv[it.k].w:'';
+        h+='<div class="svxtr" id="sq-'+it.k+'"><input type="number" id="si-'+it.k+'" placeholder="valor" step="1" min="0"'+(_lv?' value="'+_lv+'"':'')+' onclick="event.stopPropagation()"><span class="svunit">reais</span></div>';
       } else if(!it.fx){
         h+='<div class="svxtr" id="sq-'+it.k+'"><input type="number" id="si-'+it.k+'" placeholder="'+(it.u==='ml'?'metros':'qtd')+'" step="0.1" min="0" onclick="event.stopPropagation()"><span class="svunit">'+it.u+'</span></div>';
       } else {
@@ -2869,6 +2876,44 @@ function buildCfg(){
   }
   // Add save confirmation button at bottom
   h+='<div style="padding:16px 17px 32px;"><button onclick="svCFG();toast(\'✓ Configurações salvas!\');syncSVDefsFromList();buildCatalog();renderAmbientes();" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold3));border:none;border-radius:12px;font-family:Outfit,sans-serif;font-size:.88rem;font-weight:900;color:#000;cursor:pointer;">✓ Salvar Configurações</button></div>';
+    }else if(cfgTab===7){
+    // MÓDULO TÚMULO — preços civis e mão de obra
+    if(!CFG.tumulos)CFG.tumulos={};
+    if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
+    if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
+    if(typeof CFG.tumulos.margem==='undefined')CFG.tumulos.margem=35;
+    var ci=CFG.tumulos.civil,mo=CFG.tumulos.mob;
+    function _tcInp(lbl,cat,key,val){
+      return '<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">'+lbl+'</label>'+
+        '<input class="cfginp" type="number" value="'+val+'" min="0" step="0.5" style="text-align:right;" '+
+        'onchange="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();" oninput="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();"></div>';
+    }
+    h+='<div class="cfgsec"><div class="cfghd">🏗️ Materiais Civis</div>';
+    h+='<div style="padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+    h+=_tcInp('Cimento (R$/saco)','civil','cimento',ci.cimento);
+    h+=_tcInp('Areia (R$/m³)','civil','areia',ci.areia);
+    h+=_tcInp('Brita (R$/m³)','civil','brita',ci.brita);
+    h+=_tcInp('Argamassa (R$/saco)','civil','argamassa',ci.argamassa);
+    h+=_tcInp('Ferro 3/8&quot; (R$/barra)','civil','ferro38',ci.ferro38);
+    h+=_tcInp('Ferro 5/16&quot; (R$/barra)','civil','ferro516',ci.ferro516);
+    h+=_tcInp('Malha de aço (R$/m²)','civil','malha',ci.malha);
+    h+=_tcInp('Blocos/tijolos (R$/un)','civil','blocos',ci.blocos);
+    h+='</div></div>';
+    h+='<div class="cfgsec"><div class="cfghd">👷 Mão de Obra</div>';
+    h+='<div style="padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+    h+=_tcInp('Pedreiro (R$/dia)','mob','pedreiro',mo.pedreiro);
+    h+=_tcInp('Ajudante (R$/dia)','mob','ajudante',mo.ajudante);
+    h+=_tcInp('Instalação (R$/dia)','mob','instalacao',mo.instalacao);
+    h+=_tcInp('Montagem (R$/dia)','mob','montagem',mo.montagem);
+    h+=_tcInp('Transporte (R$)','mob','transporte',mo.transporte);
+    h+='</div></div>';
+    h+='<div class="cfgsec"><div class="cfghd">📊 Margem de Lucro</div>';
+    h+='<div style="padding:10px 14px 14px;">';
+    h+='<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">Margem (%)</label>';
+    h+='<input class="cfginp" type="number" value="'+CFG.tumulos.margem+'" min="0" max="100" step="1" style="text-align:right;" ';
+    h+='onchange="CFG.tumulos.margem=+this.value;svCFG();"></div>';
+    h+='</div></div>';
+  }
   document.getElementById('cfgBody').innerHTML=h;
 }
 function importarDados(){
@@ -4177,12 +4222,11 @@ var _tcSEL = {preset:'dupla',tipoServ:'rev',acabamento:'POL',
   tampas:{moldura:10,linhas:1,colunas:1,espTampa:3}};
 
 function _tcCfg() {
-  var g={};
-  try{g=JSON.parse(localStorage.getItem('hr_config')||'{}').tumulos||{};}catch(e){}
+  var t=(CFG&&CFG.tumulos)||{};
   return {
-    margem:g.margem||CFG.margem||35,
-    civil:g.civil||TC_DEF_CIVIL,
-    mob:g.mob||TC_DEF_MOB,
+    margem:t.margem||CFG.margem||35,
+    civil:t.civil||TC_DEF_CIVIL,
+    mob:t.mob||TC_DEF_MOB,
   };
 }
 
