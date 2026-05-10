@@ -6,23 +6,23 @@ var CACHE_VERSION = 'hr-app-v15';
 
 // Arquivos do app shell — cacheados para funcionar offline
 var APP_SHELL = [
-  '/Aplicativo-/index.html',
-  '/Aplicativo-/styles.css',
-  '/Aplicativo-/manifest.json',
-  '/Aplicativo-/icon-192.png',
-  '/Aplicativo-/icon-512.png',
-  '/Aplicativo-/data-cuba-imgs.js',
-  '/Aplicativo-/data-defaults.js',
-  '/Aplicativo-/app-init.js',
-  '/Aplicativo-/app-orcamento.js',
-  '/Aplicativo-/app-financas.js',
-  '/Aplicativo-/app-catalogos.js',
-  '/Aplicativo-/app-config.js',
-  '/Aplicativo-/app-contrato.js',
-  '/Aplicativo-/fechamento.js',
-  '/Aplicativo-/app-boletos.js',
-  '/Aplicativo-/app-ai-utils.js',
-  '/Aplicativo-/pwa.js'
+  '/Novo-app/index.html',
+  '/Novo-app/styles.css',
+  '/Novo-app/manifest.json',
+  '/Novo-app/icon-192.png',
+  '/Novo-app/icon-512.png',
+  '/Novo-app/data-cuba-imgs.js',
+  '/Novo-app/data-defaults.js',
+  '/Novo-app/app-init.js',
+  '/Novo-app/app-orcamento.js',
+  '/Novo-app/app-financas.js',
+  '/Novo-app/app-catalogos.js',
+  '/Novo-app/app-config.js',
+  '/Novo-app/app-contrato.js',
+  '/Novo-app/fechamento.js',
+  '/Novo-app/app-boletos.js',
+  '/Novo-app/app-ai-utils.js',
+  '/Novo-app/pwa.js'
 ];
 
 // ── INSTALL: pré-cacheia o app shell ──
