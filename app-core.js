@@ -207,7 +207,7 @@ function initCFG(){
   CFG.lav.forEach(function(c){if(CUBA_IMGS[c.id])c.photo=CUBA_IMGS[c.id];});
   // Garantir que ac existe (usuários com cfg antiga)
   if(!CFG.ac)CFG.ac=JSON.parse(JSON.stringify(DEF_ACESS));
-  // ── Módulo Túmulo: garantir preços configurados ──
+  // Modulo Tumulo: garantir precos configurados
   if(!CFG.tumulos)CFG.tumulos={};
   if(!CFG.tumulos.civil)CFG.tumulos.civil={cimento:38,areia:120,brita:150,argamassa:28,ferro38:42,ferro516:28,malha:45,blocos:4.5};
   if(!CFG.tumulos.mob)CFG.tumulos.mob={pedreiro:280,ajudante:160,instalacao:300,montagem:280,transporte:200};
@@ -2503,6 +2503,18 @@ function buildPT(){
 }
 
 // ═══ CONFIG ═══
+function updTumCfg(el){
+  var cat=el.getAttribute('data-tcat'),key=el.getAttribute('data-tkey');
+  if(!CFG.tumulos)CFG.tumulos={};
+  if(!CFG.tumulos[cat])CFG.tumulos[cat]={};
+  CFG.tumulos[cat][key]=+el.value;
+  svCFG();
+}
+function updTumCfgMargem(el){
+  if(!CFG.tumulos)CFG.tumulos={};
+  CFG.tumulos.margem=+el.value;
+  svCFG();
+}
 function buildCfg(){
   var h='';
   if(cfgTab===0){
@@ -2872,43 +2884,47 @@ function buildCfg(){
       h+='</div>';
     });
     h+='<button class="cfgadd" onclick="CFG.ac.push({id:\'ac_\'+Date.now(),nm:\'Novo Acessório\',marca:\'\',dim:\'\',pr:0,desc:\'\',photo:\'\'});svCFG();buildCfg();">+ Adicionar Acessório</button>';
+  } else if(cfgTab===7){
+    var ci=CFG.tumulos&&CFG.tumulos.civil?CFG.tumulos.civil:{};
+    var mo=CFG.tumulos&&CFG.tumulos.mob?CFG.tumulos.mob:{};
+    var mg=CFG.tumulos&&typeof CFG.tumulos.margem!=='undefined'?CFG.tumulos.margem:35;
+    var tRows=[
+      ['Materiais Civis','civil',[
+        ['Cimento (R$/saco)','cimento',ci.cimento||38],
+        ['Areia (R$/m3)','areia',ci.areia||120],
+        ['Brita (R$/m3)','brita',ci.brita||150],
+        ['Argamassa (R$/saco)','argamassa',ci.argamassa||28],
+        ['Ferro 3/8 (R$/barra)','ferro38',ci.ferro38||42],
+        ['Ferro 5/16 (R$/barra)','ferro516',ci.ferro516||28],
+        ['Malha aco (R$/m2)','malha',ci.malha||45],
+        ['Blocos (R$/un)','blocos',ci.blocos||4.5]
+      ]],
+      ['Mao de Obra','mob',[
+        ['Pedreiro (R$/dia)','pedreiro',mo.pedreiro||280],
+        ['Ajudante (R$/dia)','ajudante',mo.ajudante||160],
+        ['Instalacao (R$/dia)','instalacao',mo.instalacao||300],
+        ['Montagem (R$/dia)','montagem',mo.montagem||280],
+        ['Transporte (R$)','transporte',mo.transporte||200]
+      ]]
+    ];
+    tRows.forEach(function(sec){
+      h+='<div class="cfgsec"><div class="cfghd">'+sec[0]+'</div>';
+      h+='<div style="padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+      sec[2].forEach(function(row){
+        h+='<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;">'+row[0]+'</label>';
+        h+='<input class="cfginp" type="number" value="'+row[2]+'" min="0" step="0.5" style="text-align:right;"';
+        h+=' data-tcat="'+sec[1]+'" data-tkey="'+row[1]+'" onchange="updTumCfg(this)" oninput="updTumCfg(this)"></div>';
+      });
+      h+='</div></div>';
+    });
+    h+='<div class="cfgsec"><div class="cfghd">Margem de Lucro</div>';
+    h+='<div style="padding:10px 14px 14px;"><div class="f">';
+    h+='<label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;">Margem Tumulo (%)</label>';
+    h+='<input class="cfginp" type="number" value="'+mg+'" min="0" max="100" step="1" style="text-align:right;"';
+    h+=' onchange="updTumCfgMargem(this)" oninput="updTumCfgMargem(this)"></div></div></div>';
   }
   // Add save confirmation button at bottom
   h+='<div style="padding:16px 17px 32px;"><button onclick="svCFG();toast(\'✓ Configurações salvas!\');syncSVDefsFromList();buildCatalog();renderAmbientes();" style="width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),var(--gold3));border:none;border-radius:12px;font-family:Outfit,sans-serif;font-size:.88rem;font-weight:900;color:#000;cursor:pointer;">✓ Salvar Configurações</button></div>';
-    }else if(cfgTab===7){
-    // MÓDULO TÚMULO — preços civis e mão de obra
-    var ci=CFG.tumulos.civil||{},mo=CFG.tumulos.mob||{};
-    var _tcInp=function(lbl,cat,key,val){
-      return '<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">'+lbl+'</label>'+
-        '<input class="cfginp" type="number" value="'+val+'" min="0" step="0.5" style="text-align:right;" '+
-        'onchange="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();" oninput="CFG.tumulos.'+cat+'[''+key+'']=+this.value;svCFG();"></div>';
-    }
-    h+='<div class="cfgsec"><div class="cfghd">🏗️ Materiais Civis</div>';
-    h+='<div style="padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-    h+=_tcInp('Cimento (R$/saco)','civil','cimento',ci.cimento);
-    h+=_tcInp('Areia (R$/m³)','civil','areia',ci.areia);
-    h+=_tcInp('Brita (R$/m³)','civil','brita',ci.brita);
-    h+=_tcInp('Argamassa (R$/saco)','civil','argamassa',ci.argamassa);
-    h+=_tcInp('Ferro 3/8&quot; (R$/barra)','civil','ferro38',ci.ferro38);
-    h+=_tcInp('Ferro 5/16&quot; (R$/barra)','civil','ferro516',ci.ferro516);
-    h+=_tcInp('Malha de aço (R$/m²)','civil','malha',ci.malha);
-    h+=_tcInp('Blocos/tijolos (R$/un)','civil','blocos',ci.blocos);
-    h+='</div></div>';
-    h+='<div class="cfgsec"><div class="cfghd">👷 Mão de Obra</div>';
-    h+='<div style="padding:10px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
-    h+=_tcInp('Pedreiro (R$/dia)','mob','pedreiro',mo.pedreiro);
-    h+=_tcInp('Ajudante (R$/dia)','mob','ajudante',mo.ajudante);
-    h+=_tcInp('Instalação (R$/dia)','mob','instalacao',mo.instalacao);
-    h+=_tcInp('Montagem (R$/dia)','mob','montagem',mo.montagem);
-    h+=_tcInp('Transporte (R$)','mob','transporte',mo.transporte);
-    h+='</div></div>';
-    h+='<div class="cfgsec"><div class="cfghd">📊 Margem de Lucro</div>';
-    h+='<div style="padding:10px 14px 14px;">';
-    h+='<div class="f"><label style="font-size:.6rem;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;">Margem (%)</label>';
-    h+='<input class="cfginp" type="number" value="'+CFG.tumulos.margem+'" min="0" max="100" step="1" style="text-align:right;" ';
-    h+='onchange="CFG.tumulos.margem=+this.value;svCFG();"></div>';
-    h+='</div></div>';
-  }
   document.getElementById('cfgBody').innerHTML=h;
 }
 function importarDados(){
@@ -4404,7 +4420,7 @@ function openTumCalc(ambId){
   var matNm=mat?mat.nm+'<span style="color:var(--gold2);margin-left:6px;">R$ '+mat.pr+'/m²</span>':'<span style="color:var(--red)">⚠️ Selecione a pedra no ambiente primeiro</span>';
   var el=document.createElement('div');
   el.id='tumCalcMd';
-  el.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.96);overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  el.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);overflow-y:auto;-webkit-overflow-scrolling:touch;';
   el.innerHTML=_tcBuildHtml(matNm);
   document.body.appendChild(el);
   _tcRefresh();
@@ -4422,13 +4438,13 @@ function _tcBuildHtml(matNm){
       ' oninput="tc_calcular()" style="background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;padding:9px 10px;color:var(--tx);font-size:.85rem;width:100%;font-family:Outfit,sans-serif;outline:none;transition:border-color .15s;"></div>';
   };
   var h='<div style="max-width:520px;margin:16px auto 40px;padding:0 12px;">';
-  h+='<div style="background:#101012;border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;">';
+  h+='<div style="background:var(--bg2);border:1px solid var(--bd2);border-radius:16px;overflow:hidden;">';
   // Header
   h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd);">';
   h+='<div style="font-family:\'DM Mono\',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;">⚰️ Calculadora de Túmulo</div>';
   h+='<button onclick="closeTumCalc()" style="background:none;border:none;color:var(--t3);font-size:1.1rem;cursor:pointer;line-height:1;">✕</button>';
   h+='</div>';
-  h+='<div style="padding:16px;background:#101012;">';
+  h+='<div style="padding:16px;">';
   // Material
   h+='<div style="font-size:.72rem;color:var(--t3);margin-bottom:14px;">🪨 '+matNm+'</div>';
   // Seção helper
