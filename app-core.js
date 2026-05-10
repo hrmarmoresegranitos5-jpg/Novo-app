@@ -4365,7 +4365,7 @@ function openTumCalc(ambId){
   var matNm=mat?mat.nm+'<span style="color:var(--gold2);margin-left:6px;">R$ '+mat.pr+'/m²</span>':'<span style="color:var(--red)">⚠️ Selecione a pedra no ambiente primeiro</span>';
   var el=document.createElement('div');
   el.id='tumCalcMd';
-  el.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.88);overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  el.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.96);overflow-y:auto;-webkit-overflow-scrolling:touch;';
   el.innerHTML=_tcBuildHtml(matNm);
   document.body.appendChild(el);
   _tcRefresh();
@@ -4383,13 +4383,13 @@ function _tcBuildHtml(matNm){
       ' oninput="tc_calcular()" style="background:var(--bg3);border:1px solid var(--bd2);border-radius:8px;padding:9px 10px;color:var(--tx);font-size:.85rem;width:100%;font-family:Outfit,sans-serif;outline:none;transition:border-color .15s;"></div>';
   };
   var h='<div style="max-width:520px;margin:16px auto 40px;padding:0 12px;">';
-  h+='<div style="background:var(--bg2);border:1px solid var(--bd2);border-radius:16px;overflow:hidden;">';
+  h+='<div style="background:#101012;border:1px solid rgba(255,255,255,.12);border-radius:16px;overflow:hidden;">';
   // Header
   h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--bd);">';
   h+='<div style="font-family:\'DM Mono\',monospace;font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;">⚰️ Calculadora de Túmulo</div>';
   h+='<button onclick="closeTumCalc()" style="background:none;border:none;color:var(--t3);font-size:1.1rem;cursor:pointer;line-height:1;">✕</button>';
   h+='</div>';
-  h+='<div style="padding:16px;">';
+  h+='<div style="padding:16px;background:#101012;">';
   // Material
   h+='<div style="font-size:.72rem;color:var(--t3);margin-bottom:14px;">🪨 '+matNm+'</div>';
   // Seção helper
