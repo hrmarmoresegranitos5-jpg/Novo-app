@@ -2,7 +2,7 @@
 // HR Mármores e Granitos — Service Worker
 // ═══════════════════════════════════════════════════════
 
-var CACHE_VERSION = 'hr-app-v15';
+var CACHE_VERSION = 'hr-app-v16';
 
 // Arquivos do app shell — cacheados para funcionar offline
 var APP_SHELL = [
@@ -11,18 +11,7 @@ var APP_SHELL = [
   '/Novo-app/manifest.json',
   '/Novo-app/icon-192.png',
   '/Novo-app/icon-512.png',
-  '/Novo-app/data-cuba-imgs.js',
-  '/Novo-app/data-defaults.js',
-  '/Novo-app/app-init.js',
-  '/Novo-app/app-orcamento.js',
-  '/Novo-app/app-financas.js',
-  '/Novo-app/app-catalogos.js',
-  '/Novo-app/app-config.js',
-  '/Novo-app/app-contrato.js',
-  '/Novo-app/fechamento.js',
-  '/Novo-app/app-boletos.js',
-  '/Novo-app/app-ai-utils.js',
-  '/Novo-app/pwa.js'
+  '/Novo-app/app-core.js'
 ];
 
 // ── INSTALL: pré-cacheia o app shell ──
