@@ -865,7 +865,7 @@ function tumSalvar() {
       cli:        q.cli,
       mat:        matNm,
       vista:      r.valor_vista,
-      prazo:      r.prazo_total,
+      prazo:      r.valor_vista,
       ent:        _r2(r.valor_vista * 0.5),
       custo:      r.custo_total,
       lucro:      r.lucro,
