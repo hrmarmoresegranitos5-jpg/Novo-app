@@ -559,8 +559,10 @@ function renderAmbientes(){
       h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
       h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">🪨 Pedra</span>';
       var ambMat2=CFG.stones.find(function(s){return s.id===amb.selMat;});
-      if(ambMat2){h+='<span style="font-size:.6rem;color:var(--t3);">'+ambMat2.nm+' · <span style="color:var(--gold2);">R$ '+ambMat2.pr.toLocaleString('pt-BR')+'/m\u00b2</span></span>';}
+      h+='<span id="mind-'+amb.id+'" style="font-size:.6rem;color:var(--t3);">';
+      if(ambMat2){h+=ambMat2.nm+' · <span style="color:var(--gold2);">R$ '+ambMat2.pr.toLocaleString('pt-BR')+'/m²</span>';}
       else{h+='<span style="font-size:.6rem;color:var(--t4);">selecione uma pedra</span>';}
+      h+='</span>';
       h+='</div>';
       h+=buildMatCarouselHtml(amb);
       h+='</div>';
@@ -655,6 +657,7 @@ function renderAmbientes(){
       h+='</div>';
       h+='</div>';
     }
+    if(amb.tipo!=='Túmulo'){
     h+='<div style="margin:10px 0 12px;">';
     h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
     h+='<span style="font-size:.52rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;">② Pedra</span>';
@@ -668,7 +671,26 @@ function renderAmbientes(){
     h+='</div>';
     h+=buildMatCarouselHtml(amb);
     h+='</div>';
-    // Pecas
+    }
+    // Pecas — para Túmulo, mostra resumo pós-cálculo; para outros, edição manual
+    if(amb.tipo==='Túmulo'){
+      if(amb.tumExtra&&amb.tumExtra.calc_ok&&amb.pecas&&amb.pecas.length){
+        h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 7px;">🧱 Peças Calculadas</div>';
+        h+='<div class="amb-pecas">';
+        amb.pecas.forEach(function(pc,pi){
+          h+='<div class="peca">';
+          h+='<div class="ptop"><span class="pnum">Peça '+(pi+1)+'</span></div>';
+          h+='<div class="f"><label>Descrição</label><input id="pd-'+pc.id+'" placeholder="Ex: Tampa" type="text" style="background:var(--s3);" value="'+escH(pc.desc||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'desc\',this.value)"></div>';
+          h+='<div class="r2"><div class="f"><label>Comprimento (cm)</label><input id="pw-'+pc.id+'" placeholder="200" type="number" style="background:var(--s3);" value="'+(pc.w||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'w\',+this.value)"></div>';
+          h+='<div class="f"><label>Largura (cm)</label><input id="ph-'+pc.id+'" placeholder="70" type="number" style="background:var(--s3);" value="'+(pc.h||'')+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'h\',+this.value)"></div></div>';
+          h+='<div style="max-width:130px;"><div class="f"><label>Quantidade</label><input id="pq-'+pc.id+'" type="number" style="background:var(--s3);" value="'+(pc.q||1)+'" oninput="updPcAmb('+amb.id+','+pc.id+',\'q\',+this.value||1)"></div></div>';
+          h+='</div>';
+        });
+        h+='</div>';
+      }
+      h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 7px;">Serviços</div>';
+      h+=buildSVHtml(amb);
+    } else {
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin:14px 0 7px;">Peças</div>';
     h+='<div class="amb-pecas">';
     amb.pecas.forEach(function(pc,pi){
@@ -688,6 +710,7 @@ function renderAmbientes(){
     h+='</div>';
     h+='<div style="font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:7px;">Serviços</div>';
     h+=buildSVHtml(amb);
+    }
     h+='</div></div>';
   });
   container.innerHTML=h;
