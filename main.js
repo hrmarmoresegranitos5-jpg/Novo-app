@@ -923,7 +923,6 @@ function rmAmbiente(id){
 }
 
 function setAmbTipo(id,tipo){
-  if(tipo==='Túmulo'){go(9);return;} // Módulo dedicado pg9
   var amb=ambientes.find(function(a){return a.id==id;});
   if(!amb)return;
   amb.tipo=tipo;
