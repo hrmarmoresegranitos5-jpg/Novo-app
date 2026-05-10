@@ -342,6 +342,35 @@ function _tumCalcFull() {
 function tumInit()   { _tumBoot(); }
 function renderTum() { _tumBoot(); }
 
+// ─────────────────────────────────────────────────────────────────────
+// MODAL — usado quando pg9 não existe (Novo-app integrado)
+// ─────────────────────────────────────────────────────────────────────
+function _tumOpenModal() {
+  var existing = document.getElementById('tumOrcModal');
+  if (existing) { existing.remove(); }
+  var el = document.createElement('div');
+  el.id = 'tumOrcModal';
+  el.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,.92);overflow-y:auto;-webkit-overflow-scrolling:touch;';
+  el.innerHTML = '<div style="min-height:100vh;">'
+    + '<div style="position:sticky;top:0;z-index:10;background:var(--bg2,#101012);border-bottom:1px solid rgba(201,168,76,.2);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">'
+    + '<span style="font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold,#c9a84c);font-weight:700;">⚰️ Orçamento de Túmulo</span>'
+    + '<button onclick="closeTumOrcModal()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--t2,#b0ab9e);padding:5px 13px;font-size:.75rem;cursor:pointer;font-family:Outfit,sans-serif;">✕ Fechar</button>'
+    + '</div>'
+    + '<div id="pg9" style="padding-bottom:80px;min-height:calc(100vh - 48px);"></div>'
+    + '</div>';
+  document.body.appendChild(el);
+  _tumBoot();
+}
+function closeTumOrcModal() {
+  var el = document.getElementById('tumOrcModal');
+  if (el) el.remove();
+}
+
+// Função chamada pelo botão no ambiente Túmulo do Novo-app
+function abrirCalculadoraTumulos() {
+  _tumOpenModal();
+}
+
 function _tumBoot() {
   _tumInitCfg();
   _tumLoadHist();
@@ -377,8 +406,13 @@ function _tumLoadHist() {
 // RENDER PRINCIPAL
 // ─────────────────────────────────────────────────────────────────────
 function _tumRender() {
-  var pg = document.getElementById('pg9');
-  if (!pg) return;
+  // Suporte a pg9 (standalone) e ao modal tumCalcMd (Novo-app integrado)
+  var pg = document.getElementById('pg9') || document.getElementById('tumCalcMd');
+  if (!pg) {
+    // Se chamado fora de contexto, tenta criar modal
+    _tumOpenModal();
+    return;
+  }
   var r  = TUM.calc || {};
   var vf = r.valor_vista || 0;
   var q  = TUM.q;
@@ -934,6 +968,11 @@ function tumSalvar() {
   }
 
   if (typeof toast === 'function') toast('✅ Salvo! Agenda e Finanças atualizados.');
+  // Atualiza histórico de orçamentos e agenda do Novo-app
+  if (typeof renderOrc === 'function') renderOrc();
+  if (typeof renderAgenda === 'function') renderAgenda();
+  // Re-renderiza a aba histórico do módulo de túmulos
+  if (TUM._tab === 'historico') _tumRenderTab();
 }
 
 // ─────────────────────────────────────────────────────────────────────
