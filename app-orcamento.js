@@ -642,8 +642,8 @@ function renderAmbientes(){
       }
       h+='</div>';
 
-      // ── BOTÃO CALCULAR E APLICAR ──
-      h+='<button onclick="inlineTcAplicar('+amb.id+')" style="width:100%;background:linear-gradient(135deg,#c9a84c,#e2c06a);color:#0d0c09;border:none;border-radius:12px;padding:13px;font-size:.85rem;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:.5px;box-shadow:0 4px 16px rgba(201,168,76,.22);">✅ Calcular e Aplicar Peças</button>';
+      // ── BOTÃO CALCULADORA COMPLETA HR v12 ──
+      h+='<button onclick="tumAbrirComAmb('+amb.id+')" style="width:100%;background:linear-gradient(135deg,#c9a84c,#e2c06a);color:#0d0c09;border:none;border-radius:12px;padding:13px;font-size:.85rem;font-weight:800;cursor:pointer;font-family:Outfit,sans-serif;letter-spacing:.5px;box-shadow:0 4px 16px rgba(201,168,76,.22);">⚰️ Orçamento Completo de Túmulo</button>';
       h+='</div>';
     }
     if(amb.tipo==='🏊 Borda Piscina'){
